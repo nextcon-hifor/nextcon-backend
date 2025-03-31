@@ -42,7 +42,7 @@ export class User {
 
   @Column({ type: 'timestamp', nullable: true, default: () => 'CURRENT_TIMESTAMP' })
   passwordLastChanged: Date;
-
+  
   @Column({ default: false })
   passwordReset: boolean;
 
