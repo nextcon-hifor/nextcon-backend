@@ -1,5 +1,5 @@
 // user.entity.ts
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 import { HiforEvent } from 'src/hifor-event/events.entity';
 import { Participant } from 'src/participant/participant.entity';
@@ -54,4 +54,11 @@ export class User {
 
   @OneToMany(() => Like, (like) => like.user)
   likes: Like[]; // 사용자가 좋아요를 누른 목록
+
+  @CreateDateColumn()
+  createdAt: Date
+
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }
