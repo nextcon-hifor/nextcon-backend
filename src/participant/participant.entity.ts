@@ -1,10 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn,OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { User } from '../user/user.entity'; 
 import { HiforEvent } from 'src/events/events.entity';
 import { BaseEntity } from 'src/common/entities/base.entity';
 
 @Entity('participant')
-export class Participant extends BaseEntity{
+export class Participant extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number; // 참가자 고유 식별자
 

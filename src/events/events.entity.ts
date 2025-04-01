@@ -2,8 +2,9 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, Up
 import { User } from '../user/user.entity'; 
 import { Participant } from 'src/participant/participant.entity';
 import { Like } from 'src/likes/likes.entity';
-import { Image } from 'src/event-gallery/evtImgs.entity';
+import { eventImage } from 'src/image/image.entity';
 import { BaseEntity } from 'src/common/entities/base.entity';
+import { IsOptional, IsString } from 'class-validator';
 
 @Entity('hifor_event')
 export class HiforEvent extends BaseEntity {
@@ -52,8 +53,8 @@ export class HiforEvent extends BaseEntity {
   @ManyToOne(() => User, (user) => user.events, { eager: false })
   createdBy: User; // 이벤트 생성자 (User 엔터티와 관계)
 
-  @OneToMany(() => Image, (image) => image.event, { cascade: true })
-  images: Image[];
+  @OneToMany(() => eventImage, (eventImage) => eventImage.event, { cascade: true })
+  eventImages: eventImage[];
 
   @OneToMany(() => Participant, (participant) => participant.event,{ cascade: true })
   participants: Participant[]; // 이벤트에 연결된 참가자 목록
@@ -61,4 +62,13 @@ export class HiforEvent extends BaseEntity {
   @OneToMany(() => Like, (like) => like.event, { cascade: true })
   likes: Like[]; // 이벤트와 연결된 좋아요 목록
 
+}
+
+@Entity('adEmails')
+export class AdEmail {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  email: string;
 }

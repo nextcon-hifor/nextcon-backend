@@ -1,7 +1,7 @@
 // user.entity.ts
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
-import { HiforEvent } from 'src/hifor-event/events.entity';
+import { HiforEvent } from 'src/events/events.entity';
 import { Participant } from 'src/participant/participant.entity';
 import { Like } from 'src/likes/likes.entity';
 
@@ -42,7 +42,7 @@ export class User {
 
   @Column({ type: 'timestamp', nullable: true, default: () => 'CURRENT_TIMESTAMP' })
   passwordLastChanged: Date;
-
+  
   @Column({ default: false })
   passwordReset: boolean;
 
