@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn,OneToMany } from 'typeorm';
 import { User } from '../user/user.entity'; 
-import { HiforEvent } from 'src/hifor-event/events.entity';
+import { HiforEvent } from 'src/events/events.entity';
 import { BaseEntity } from 'src/common/entities/base.entity';
 
 @Entity('likes')
