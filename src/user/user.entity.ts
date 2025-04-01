@@ -1,7 +1,7 @@
 // user.entity.ts
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
-import { HiforEvent } from 'src/hifor-event/events.entity';
+import { HiforEvent } from 'src/events/events.entity';
 import { Participant } from 'src/participant/participant.entity';
 import { Like } from 'src/likes/likes.entity';
 
