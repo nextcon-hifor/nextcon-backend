@@ -5,9 +5,10 @@ import { HiforEvent } from 'src/events/events.entity';
 import { Participant } from 'src/participant/participant.entity';
 import { Like } from 'src/likes/likes.entity';
 import {Review} from 'src/review/review.entity'
+import { BaseEntity } from 'src/common/entities/base.entity';
 
 @Entity()
-export class User {
+export class User extends BaseEntity{
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -55,13 +56,6 @@ export class User {
 
   @OneToMany(() => Like, (like) => like.user)
   likes: Like[]; // 사용자가 좋아요를 누른 목록
-
-  @CreateDateColumn()
-  createdAt: Date
-
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   @OneToMany(() => Review, (review) => review.user)
 reviews: Review[];
