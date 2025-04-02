@@ -61,8 +61,10 @@ import {
           case 'hot':
             return await this.eventsService.getHotEvents();
           case 'search':
-            return await this.eventsService.searchEvent(searchEventDto);
+            if (!searchEventDto) throw new Error('SearchEventDto is required');
+            return await this.eventsService.searchEvent(searchEventDto);        
           case 'category':
+            if (!category) throw new Error('category is required');
             return await this.eventsService.searchEventByCategory(category);
           case 'upcoming':
             return await this.eventsService.getUpcomingEvents();

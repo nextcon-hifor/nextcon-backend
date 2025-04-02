@@ -6,12 +6,11 @@ import { EventsService } from 'src/events/events.service';
 export class LikesController {
   constructor(
     private readonly likesService: LikesService,
-    private readonly eventsService: EventsService,
   ) {}
 
     @Post(':eventId/like')
     async toggleLike(@Param('eventId', ParseIntPipe) eventId: number, @Body('userId') userId: string) {
-    const updatedLikes = await this.eventsService.toggleLike(eventId, userId);
+    const updatedLikes = await this.likesService.toggleLike(eventId, userId);
     return { likesLen: updatedLikes };
     }
 
@@ -21,7 +20,7 @@ export class LikesController {
     @Param('eventId') eventId: number,
     @Query('userId') userId: string,
     ): Promise<{ isLiked: boolean }> {
-    const isLiked = await this.eventsService.checkLikeStatus(eventId, userId);
+    const isLiked = await this.likesService.checkLikeStatus(eventId, userId);
     return { isLiked };
     }
 }
