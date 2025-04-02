@@ -8,9 +8,9 @@ import {
     Post,
     UseGuards,
   } from '@nestjs/common';
-  import { ReviewService } from './review.service';
-  import { CreateReviewDto, UpdateReviewDto } from './review.dto';
-  import { User } from '../user/user.entity';
+import { ReviewService } from './review.service';
+import { CreateReviewDto, UpdateReviewDto } from './review.dto';
+import { User } from '../user/user.entity';
 
   
   @Controller('reviews')
@@ -28,6 +28,22 @@ import {
         return { success: false, message: error.message };
       }
     }
+    @Get('/event/:eventId')
+    async getReviewsByEvent(@Param('eventId') eventId: number) {
+    return this.reviewService.findByEvent(eventId);
+    }
 
+    @Get('/user/:userId')
+    async getReviewsByUser(@Param('userId') userId: string) {
+    return this.reviewService.findByUser(userId);
+    }
+
+    @Get('/host/:hostId/average')
+    async getHostAverage(@Param('hostId') hostId: number) {
+    return this.reviewService.getHostAverageRating(hostId);
+    }
+    
+
+    
   }
   

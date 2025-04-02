@@ -64,7 +64,7 @@ export class HiforEvent extends BaseEntity {
   likes: Like[]; // 이벤트와 연결된 좋아요 목록
 
   @OneToMany(() => Review, (review) => review.event)
-reviews: Review[];
+  reviews: Review[];
 
 }
 
