@@ -1,4 +1,13 @@
-import { Controller, Post, Body, Delete, Param, Get, Query, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Delete,
+  Param,
+  Get,
+  Query,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { LikesService } from './likes.service';
 import { EventsService } from 'src/events/events.service';
 

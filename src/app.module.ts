@@ -7,6 +7,7 @@ import { LikesModule } from './likes/likes.module';
 import { MailModule } from './mail/mail.module';
 import { ParticipantModule } from './participant/participant.module';
 import { ImageModule } from './image/image.module';
+import { ReviewModule } from './review/review.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -43,7 +44,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     LikesModule,
     MailModule,
     ParticipantModule,
-    ImageModule
+    ImageModule,
+    ReviewModule,
   ],
   controllers: [AppController],
   providers: [AppService],
