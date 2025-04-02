@@ -39,7 +39,7 @@ import { User } from '../user/user.entity';
     }
 
     @Get('/host/:hostId/average')
-    async getHostAverage(@Param('hostId') hostId: number) {
+    async getHostAverage(@Param('hostId') hostId: string) {
     return this.reviewService.getHostAverageRating(hostId);
     }
     

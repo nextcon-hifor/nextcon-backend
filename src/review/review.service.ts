@@ -42,8 +42,8 @@ export class ReviewService {
       });
   }
 
-  async getHostAverageRating(hostId: number): Promise<{ average: number; count: number }> {
-    const events = await this.eventRepo.find({ where: { createdBy: { id: hostId } }, relations: ['reviews'] });
+  async getHostAverageRating(hostId: string): Promise<{ average: number; count: number }> {
+    const events = await this.eventRepo.find({ where: { createdBy: { userId: hostId } }, relations: ['reviews'] });
     const allReviews = events.flatMap((event) => event.reviews || []);
 
     if (allReviews.length === 0) return { average: 0, count: 0 };
