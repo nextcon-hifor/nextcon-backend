@@ -4,6 +4,8 @@ import {
     Get,
     Post,
     Param,
+    Request,
+    Response,
     Put,
     Delete,
     BadRequestException,
@@ -13,13 +15,17 @@ import {
   } from '@nestjs/common';
   import { CreateUserDto, SignInUserDto } from './user.dto';
   import { UserService } from './user.service';
+  import { ConfigService } from '@nestjs/config';
   import { FileInterceptor } from '@nestjs/platform-express';
   import { extname } from 'path';
+import { GoogleAuthGuard } from './auth.guard';
   
   
   @Controller('user')
   export class UserController {
-    constructor(private userService: UserService) {}
+    constructor(private userService: UserService,
+      private readonly configService: ConfigService,
+    ) {}
   
     
     @Get('/isUserId/:userId')
@@ -115,5 +121,70 @@ import {
         throw new HttpException('Failed to update password', HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
+
+    
+  @Get('to-google')
+  @UseGuards(GoogleAuthGuard)
+  async googleAuth(@Request() req) {}
+
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  async googleAuthRedirect(@Request() req, @Response() res) {
+    const { user } = req;
+
+    // DB에서 사용자 정보 조회
+    const completeUser = await this.userService.findByEmail(user.email);
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+
+    if (!completeUser || !completeUser.dob || !completeUser.gender || !completeUser.nationality) {
+      res.redirect(`${frontendUrl}/googleSignUp?email=${user.email}&name=${user.username}`);
+      return;
+    }
+
+    const jwtToken = await this.userService.googleGenerateJwtToken({
+      id: completeUser.id,
+      userId: completeUser.userId,
+      email: completeUser.email,
+      username: completeUser.username,
+      dob: completeUser.dob,
+      gender: completeUser.gender,
+      nationality: completeUser.nationality,
+    });
+
+    res.redirect(`${frontendUrl}/?access_token=${jwtToken.access_token}&userId=${completeUser.userId}`);
+
+  }
+
+
+  
+  @Post('googleSignUp')
+  async handleGoogleSignUp(@Body() body: any) {
+    const { email, userId, dob, gender, nationality } = body;
+    try {
+      // 서비스 호출
+      const user = await this.userService.findByEmail(email);
+      if (!user) {
+        throw new HttpException('해당 이메일의 사용자를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
+      }
+      
+      user.userId = userId;
+      user.dob = dob;
+      user.gender = gender;
+      user.nationality = nationality;
+      await this.userService.updateUser(user);
+      // JWT 토큰 생성
+      const jwtToken = await this.userService.generateJwtToken(user);
+    
+      return {
+        access_token: jwtToken,
+        message: '로그인 성공',
+      };
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }    
+    
+    
+  }
   }
   
