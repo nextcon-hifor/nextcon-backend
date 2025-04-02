@@ -4,6 +4,7 @@ import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, Up
 import { HiforEvent } from 'src/events/events.entity';
 import { Participant } from 'src/participant/participant.entity';
 import { Like } from 'src/likes/likes.entity';
+import {Review} from 'src/review/review.entity'
 
 @Entity()
 export class User {
@@ -61,4 +62,7 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => Review, (review) => review.user)
+reviews: Review[];
 }

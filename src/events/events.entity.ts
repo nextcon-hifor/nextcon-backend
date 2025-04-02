@@ -5,6 +5,7 @@ import { Like } from 'src/likes/likes.entity';
 import { eventImage } from 'src/image/image.entity';
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { IsOptional, IsString } from 'class-validator';
+import {Review} from '../review/review.entity'
 
 @Entity('hifor_event')
 export class HiforEvent extends BaseEntity {
@@ -61,6 +62,9 @@ export class HiforEvent extends BaseEntity {
 
   @OneToMany(() => Like, (like) => like.event, { cascade: true })
   likes: Like[]; // 이벤트와 연결된 좋아요 목록
+
+  @OneToMany(() => Review, (review) => review.event)
+reviews: Review[];
 
 }
 
