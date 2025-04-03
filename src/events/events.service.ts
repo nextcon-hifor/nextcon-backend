@@ -246,7 +246,7 @@ import { Participant } from 'src/participant/participant.entity';
         where: { id: eventId },
         relations: [
           'createdBy',
-          'images',
+          'eventImages',
           'participants',
           'participants.user',
           'likes',
@@ -271,7 +271,7 @@ import { Participant } from 'src/participant/participant.entity';
         where: { id: eventId },
         relations: [
           'createdBy',
-          'images',
+          'eventImages',
           'participants',
           'participants.user',
           'likes',
@@ -362,7 +362,7 @@ import { Participant } from 'src/participant/participant.entity';
           where: {
             createdBy: { userId: hostId },
           },
-          relations: ['createdBy','images', 'participants', 'likes'],
+          relations: ['createdBy','eventImages', 'participants', 'likes'],
         });
   
         return await Promise.all(
