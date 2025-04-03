@@ -2,6 +2,7 @@ import {
     HttpException,
     HttpStatus,
     Injectable,
+    Logger,
     NotFoundException,
   } from '@nestjs/common';
   import { InjectRepository } from '@nestjs/typeorm';
@@ -35,97 +36,138 @@ import { Participant } from 'src/participant/participant.entity';
       @InjectRepository(User)
       private userRepository: Repository<User>,      
     ) {}
+    private readonly logger = new Logger(EventsService.name);
 
 
-    async createEvent(createEventDto: CreateEventDto): Promise<HiforEvent> {
-      // 트랜잭션 생성
-      const queryRunner = this.dataSource.createQueryRunner();
-      await queryRunner.startTransaction();
-  
-      try {
-        // 1. 사용자 검증
-        const user = await this.userRepository.findOneBy({
-          userId: createEventDto.userId,
-        });
-        if (!user) {
-          throw new Error('User not found');
-        }
-  
-        // 2. 이벤트 엔터티 생성 및 저장
-        const { images, ...eventData } = createEventDto; // DTO에서 이미지와 기타 데이터를 분리
-        const event = this.eventRepository.create({
-          ...eventData,
-          createdBy: user, // 생성자 정보 연결
-        });
-  
-        // 이벤트를 먼저 저장
-        const savedEvent = await queryRunner.manager.save(HiforEvent, event);
+  /**
+   * 이벤트를 생성하는 함수
+   * - 사용자 검증 → 이벤트 저장 → 이미지 저장 순으로 진행
+   * - 전체 작업은 트랜잭션으로 묶여 있어 중간에 오류 발생 시 롤백됨
+   */
+  async createEvent(createEventDto: CreateEventDto): Promise<HiforEvent> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.startTransaction();
 
-        // 3. 이미지 저장을 ImageService에 위임
-        if (images && images.length > 0) {
-          await this.imageService.saveImagesForEvent(images, savedEvent, queryRunner.manager);
-        }
-  
-        // 트랜잭션 커밋
-        await queryRunner.commitTransaction();
-  
-        return savedEvent;
-      } catch (error) {
-        // 트랜잭션 롤백
-        await queryRunner.rollbackTransaction();
-        throw error;
-      } finally {
-        // 트랜잭션 종료
-        await queryRunner.release();
+    try {
+      // 트랜잭션 시작 로그 (디버깅용)
+      this.logger.debug('createEvent 트랜잭션 시작');
+
+      // 사용자 존재 여부 확인
+      const user = await this.userRepository.findOneBy({
+        userId: createEventDto.userId,
+      });
+
+      if (!user) {
+        // 사용자 없을 경우 경고 로그 남기고 예외 처리
+        this.logger.warn(`해당 userId=${createEventDto.userId}에 대한 사용자를 찾을 수 없음`);
+        throw new Error('User not found');
       }
+
+      // DTO에서 이미지 분리
+      const { images, ...eventData } = createEventDto;
+
+      // 이벤트 엔터티 생성
+      const event = this.eventRepository.create({
+        ...eventData,
+        createdBy: user,
+      });
+
+      // 이벤트 저장
+      const savedEvent = await queryRunner.manager.save(HiforEvent, event);
+      this.logger.verbose(`이벤트 저장 완료: eventId=${savedEvent.id}`);
+
+      // 이미지가 존재하는 경우 이미지 저장 서비스 호출
+      if (images && images.length > 0) {
+        this.logger.debug(`이미지 ${images.length}개 저장 중... eventId=${savedEvent.id}`);
+        await this.imageService.saveImagesForEvent(images, savedEvent, queryRunner.manager);
+        this.logger.verbose(`이미지 저장 완료: eventId=${savedEvent.id}`);
+      }
+
+      // 트랜잭션 커밋
+      await queryRunner.commitTransaction();
+      this.logger.log(`트랜잭션 커밋 완료: eventId=${savedEvent.id}`);
+
+      return savedEvent;
+    } catch (error) {
+      // 트랜잭션 롤백 및 에러 로그 기록
+      await queryRunner.rollbackTransaction();
+      this.logger.error(
+        `트랜잭션 롤백 발생: userId=${createEventDto.userId}`,
+        error.stack,
+      );
+      throw error;
+    } finally {
+      // 쿼리러너 해제
+      await queryRunner.release();
+      this.logger.debug('쿼리러너 해제 완료');
     }
+  }
   
-    async getAllEvents() {
-      try {
-        const events = await this.eventRepository.find({
-          relations: ['participants', 'likes'], // 관계를 로드
-          order: { createdAt: 'DESC' }, // 최신순 정렬
-        });
-  
-        // 현재 날짜 및 시간 가져오기
-        const now = new Date();
-  
-        // 각 이벤트에 대해 승인된 참가자 수 계산
-        const eventsWithApprovedCount = await Promise.all(
-          events.map(async (event) => {
-            const eventDateTime = new Date(`${event.date}T${event.time}`);
-  
-            // 이벤트가 과거일 경우 제외
-            if (eventDateTime < now) {
-              return null;
-            }
-  
-            const approvedParticipantsCount =
+  /**
+   * 현재 시간 이후의 모든 이벤트를 가져오는 함수
+   * - 참가자, 좋아요 수 포함
+   * - 승인된 참가자 수만 계산
+   * - 과거 이벤트는 제외
+   */
+  async getAllEvents() {
+    try {
+      this.logger.debug('이벤트 전체 조회 시작');
+
+      // 이벤트 전체 조회 (참가자, 좋아요 관계 포함)
+      const events = await this.eventRepository.find({
+        relations: ['participants', 'likes'],
+        order: { createdAt: 'DESC' },
+      });
+
+      this.logger.verbose(`이벤트 ${events.length}건 조회됨`);
+
+      const now = new Date();
+
+      // 승인된 참가자 수를 포함한 새로운 이벤트 리스트 생성
+      const eventsWithApprovedCount = await Promise.all(
+        events.map(async (event) => {
+          const eventDateTime = new Date(`${event.date}T${event.time}`);
+
+          // 과거 이벤트는 제외
+          if (eventDateTime < now) {
+            this.logger.debug(`과거 이벤트 제외: eventId=${event.id}`);
+            return null;
+          }
+
+          // 승인된 참가자 수 계산
+          const approvedParticipantsCount =
             await this.participantService.countApprovedParticipantsByEvent(event.id);
-          
-            return {
-              id: event.id,
-              name: event.name,
-              description: event.description,
-              mainImage: event.mainImage,
-              location: event.location,
-              date: event.date,
-              type: event.type,
-              category: event.category,
-              price: event.price,
-              maxParticipants: event.maxParticipants,
-              participants: approvedParticipantsCount, // 승인된 참가자 수
-              likes: event.likes.length,
-            };
-          }),
-        );
-  
-        // null 값을 제거하고 결과 반환
-        return eventsWithApprovedCount.filter((event) => event !== null);
-      } catch (error) {
-        throw new Error(`Failed to fetch events: ${error.message}`);
-      }
+
+          this.logger.verbose(
+            `eventId=${event.id} | 승인된 참가자 수=${approvedParticipantsCount} | 좋아요 수=${event.likes.length}`,
+          );
+
+          return {
+            id: event.id,
+            name: event.name,
+            description: event.description,
+            mainImage: event.mainImage,
+            location: event.location,
+            date: event.date,
+            type: event.type,
+            category: event.category,
+            price: event.price,
+            maxParticipants: event.maxParticipants,
+            participants: approvedParticipantsCount,
+            likes: event.likes.length,
+          };
+        }),
+      );
+
+      const filteredEvents = eventsWithApprovedCount.filter((event) => event !== null);
+      this.logger.log(`최종 반환 이벤트 수: ${filteredEvents.length}`);
+
+      return filteredEvents;
+    } catch (error) {
+      this.logger.error('이벤트 전체 조회 중 오류 발생', error.stack);
+      throw new Error(`Failed to fetch events: ${error.message}`);
     }
+  }
   
     async getUpcomingEvents() {
       try {
@@ -365,7 +407,7 @@ import { Participant } from 'src/participant/participant.entity';
           relations: ['createdBy','eventImages', 'participants', 'likes'],
         });
   
-        return await Promise.all(
+        return await Promise.all(  
           events.map(async (event) => {
             const approvedParticipantsCount =
             await this.participantService.countApprovedParticipantsByEvent(event.id);
