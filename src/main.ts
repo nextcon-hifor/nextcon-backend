@@ -20,6 +20,11 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
+  // 👇 OPTIONS 요청 처리
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.options('*', (_, res) => {
+    res.sendStatus(204);
+  });
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: false, // 추가 데이터 무시
