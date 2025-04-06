@@ -14,16 +14,19 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const frontendUrl = configService.get<string>('FRONTEND_URL');
   console.log('🌐 Allowed Origin:', frontendUrl);
+  // enableCors 수정 (더 유연하게 허용)
   app.enableCors({
-    origin: [frontendUrl],
-    credentials: true, // 쿠키 사용 허용
+    origin: (origin, callback) => {
+      const allowedOrigins = [frontendUrl, 'https://www.hifor.kr'];
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-  });
-  // 👇 OPTIONS 요청 처리
-  const expressApp = app.getHttpAdapter().getInstance();
-  expressApp.options('*', (_, res) => {
-    res.sendStatus(204);
   });
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
