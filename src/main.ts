@@ -13,7 +13,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   const frontendUrl = configService.get<string>('FRONTEND_URL');
-
+  console.log('🌐 Allowed Origin:', frontendUrl);
   app.enableCors({
     origin: [frontendUrl],
     credentials: true, // 쿠키 사용 허용
