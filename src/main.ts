@@ -15,6 +15,9 @@ async function bootstrap() {
   const frontendUrl = configService.get<string>('FRONTEND_URL');
   console.log('🌐 Allowed Origin:', frontendUrl);
   // enableCors 수정 (더 유연하게 허용)
+  // 이 부분 추가!
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set('trust proxy', 1); // ✅ 프록시 인식 (필수)
   app.enableCors({
     origin: (origin, callback) => {
       const allowedOrigins = [frontendUrl, 'https://www.hifor.kr'];
