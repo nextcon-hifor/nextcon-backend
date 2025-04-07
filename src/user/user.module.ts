@@ -4,6 +4,7 @@ import { UserController } from './user.controller';
 import { User } from './user.entity';
 import { UserService } from './user.service';
 import { JwtModule } from '@nestjs/jwt';
+import { GoogleStrategy } from './google.strategy';
 
 import { PassportModule } from '@nestjs/passport';
 
@@ -17,7 +18,7 @@ import { PassportModule } from '@nestjs/passport';
       signOptions: { expiresIn: '1h' },
     }),],
   controllers: [UserController],
-  providers: [UserService],
+  providers: [UserService, GoogleStrategy],
   exports: [UserService],
 })
 export class UserModule {}
