@@ -19,6 +19,7 @@ import {
   import { FileInterceptor } from '@nestjs/platform-express';
   import { extname } from 'path';
 import { GoogleAuthGuard } from './auth.guard';
+import supabase from '../supabase';
   
   
   @Controller('user')
@@ -185,6 +186,55 @@ import { GoogleAuthGuard } from './auth.guard';
     }    
     
     
+  }
+
+  @Post('uploadProfileImage/:userId')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: undefined,
+      fileFilter: (req, file, callback) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+          return callback(new HttpException('Only image files are allowed!', HttpStatus.BAD_REQUEST), false);
+        }
+        callback(null, true);
+      },
+    }),
+  )
+  async uploadProfileImage(@Param('userId') userId: string, @UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new HttpException('No file uploaded', HttpStatus.BAD_REQUEST);
+    }
+
+    // 파일 확장자 추출
+    const fileExt = extname(file.originalname);
+    const fileName = `${userId}-${Date.now()}${fileExt}`;
+
+    // Supabase Storage에 업로드
+    const { data, error } = await supabase.storage
+      .from('profile-images')
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true,
+      });
+
+    if (error) {
+      throw new HttpException('Failed to upload image', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    // Supabase에서 제공하는 퍼블릭 URL 생성
+    const imageUrl = `https://vpivwjxuuobsmetklofb.supabase.co/storage/v1/object/public/profile-images/${fileName}`;
+
+    // DB에 저장된 유저 프로필 이미지 업데이트
+    const updatedUser = await this.userService.updateProfileImage(userId, imageUrl);
+
+    if (!updatedUser) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return {
+      message: 'Profile image updated successfully',
+      imageUrl,
+    };
   }
   }
   
