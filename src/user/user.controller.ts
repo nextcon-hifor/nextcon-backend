@@ -184,8 +184,6 @@ import supabase from '../supabase';
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }    
-    
-    
   }
 
   @Post('uploadProfileImage/:userId')
