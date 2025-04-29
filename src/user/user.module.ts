@@ -7,10 +7,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { GoogleStrategy } from './google.strategy';
 
 import { PassportModule } from '@nestjs/passport';
+import { ChatMessage } from 'src/chat/message/message.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, ChatMessage]),
   
     PassportModule.register({ session: false }),
     JwtModule.register({

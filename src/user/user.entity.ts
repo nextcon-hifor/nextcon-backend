@@ -6,6 +6,7 @@ import { Participant } from 'src/participant/participant.entity';
 import { Like } from 'src/likes/likes.entity';
 import {Review} from 'src/review/review.entity'
 import { BaseEntity } from 'src/common/entities/base.entity';
+import { ChatMessage } from 'src/chat/message/message.entity';
 
 @Entity()
 export class User extends BaseEntity{
@@ -58,5 +59,8 @@ export class User extends BaseEntity{
   likes: Like[]; // 사용자가 좋아요를 누른 목록
 
   @OneToMany(() => Review, (review) => review.user)
-reviews: Review[];
+  reviews: Review[];
+
+  @OneToMany(() => ChatMessage, message => message.sender)
+  messages: ChatMessage[];
 }

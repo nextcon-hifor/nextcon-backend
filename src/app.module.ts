@@ -11,6 +11,10 @@ import { ReviewModule } from './review/review.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BlogModule } from './blog/blog.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { ChatRoomModule } from './chat/room/room.module';
+import { ChatMessageModule } from './chat/message/message.module';
 
 @Module({
   imports: [
@@ -40,6 +44,10 @@ import { BlogModule } from './blog/blog.module';
         };
       },
     }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
     UserModule,
     EventsModule,
     LikesModule,
@@ -48,6 +56,8 @@ import { BlogModule } from './blog/blog.module';
     ImageModule,
     ReviewModule,
     BlogModule,
+    ChatMessageModule,
+    ChatRoomModule
   ],
   controllers: [AppController],
   providers: [AppService],

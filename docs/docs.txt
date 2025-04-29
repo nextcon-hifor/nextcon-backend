@@ -1,0 +1,37 @@
+FE
+src/
+  components/
+    ChatMain.vue: 
+    ChatListItem.vue: 2
+    ChatRoomHeader: 3
+    ChatMessage: 4,5 
+    ChatComposer: input
+    ChatRoom: 6
+    LoginForm
+
+src/
+  chat/
+    message/
+      create-message.dto.ts
+      chat-message.entity.ts
+    room/
+      create-room.dto.ts
+      chat-room.entity.ts
+    chat.module.ts
+    chat.service.ts
+    chat.gateway.ts
+      
+
+ERD
+message: id, content, senderId, roomId, timestamp, room
+room: id, name, type, msg, createdAt(date), updatedAt, lastMsgAt
+user: id, password, email, username, about, image, friends, blocked, requests
+auth
+
+Service
+find
+
+
+Ctrlr
+api/chat/rooms
+listRooms
