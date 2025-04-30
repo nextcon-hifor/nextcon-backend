@@ -28,6 +28,7 @@ export class ReviewService {
   async findByEvent(eventId: number) {
     return this.reviewRepo.find({
       where: { event: { id: eventId } },
+      relations: ['user', 'event', 'images'], // 이미지 포함
       order: { createdAt: 'DESC' },
     });
   }
@@ -37,9 +38,10 @@ export class ReviewService {
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
 
     return this.reviewRepo.find({
-        where: { user: { userId } },
-        order: { createdAt: 'DESC' },
-      });
+      where: { user: { id: user.id } },
+      relations: ['event', 'images'], // 이미지 포함
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async getHostAverageRating(hostId: string): Promise<{ average: number; count: number }> {
@@ -52,4 +54,4 @@ export class ReviewService {
     const avg = total / allReviews.length;
     return { average: Math.round(avg * 10) / 10, count: allReviews.length };
   }
-} 
+}

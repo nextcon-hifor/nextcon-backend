@@ -1,11 +1,19 @@
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsArray,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class CreateReviewDto {
   @IsString()
   userId: string;
 
-  @IsInt()
-  @Min(1)
+  @IsNumber({ maxDecimalPlaces: 1 }) // 소수점 1자리까지 허용
+  @Min(0)
   @Max(5)
   rating: number;
 
@@ -13,14 +21,19 @@ export class CreateReviewDto {
   @IsString()
   comment?: string;
 
-  @IsInt()
+  @IsNumber()
   eventId: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsUrl({}, { each: true })
+  imageUrls?: string[];
 }
 
 export class UpdateReviewDto {
   @IsOptional()
-  @IsInt()
-  @Min(1)
+  @IsNumber({ maxDecimalPlaces: 1 })
+  @Min(0)
   @Max(5)
   rating?: number;
 
