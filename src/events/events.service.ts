@@ -15,6 +15,7 @@ import { ImageService } from 'src/image/image.service';
 import { ParticipantService } from 'src/participant/participant.service';
 import { Like } from 'src/likes/likes.entity';
 import { Participant } from 'src/participant/participant.entity';
+import { ChatRoomService } from 'src/chat/room/room.service';
   
   @Injectable()
   export class EventsService {
@@ -23,6 +24,7 @@ import { Participant } from 'src/participant/participant.entity';
       private emailService: EmailService,
       private imageService: ImageService,
       private participantService: ParticipantService,
+      private readonly chatRoomService: ChatRoomService,
 
       
       @InjectRepository(Participant)

@@ -12,6 +12,8 @@ import { Participant } from 'src/participant/participant.entity';
 import { ImageModule } from 'src/image/image.module';
 import { ParticipantModule } from 'src/participant/participant.module';
 import { Like } from 'src/likes/likes.entity';
+import { ChatRoomService } from 'src/chat/room/room.service';
+import { ChatRoomModule } from 'src/chat/room/room.module';
 
 @Module({
   imports: [
@@ -19,6 +21,7 @@ import { Like } from 'src/likes/likes.entity';
     forwardRef(() => MailModule),
     ImageModule,
     forwardRef(() => ParticipantModule),
+    forwardRef(() => ChatRoomModule),
   ],
   controllers: [EventsController],
   providers: [EventsService, EmailService],
