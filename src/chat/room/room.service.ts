@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatRoom } from './room.entity';
@@ -60,5 +60,24 @@ export class ChatRoomService {
     if (result.affected === 0) {
       throw new NotFoundException(`Chat room with ID "${id}" not found`);
     }
+  }
+
+  async findRoomByIdAndUser(roomId: number, userId: number) {
+    const room = await this.chatRoomRepository.findOne({
+      where: { id: roomId },
+      relations: ['users','messages'], // 채팅방의 유저 목록 로드
+    });
+  
+    if (!room) {
+      throw new NotFoundException(`Room with ID ${roomId} not found`);
+    }
+  
+    // 사용자가 채팅방의 유저인지 확인
+    const isUserInRoom = room.users.some(user => user.id === userId);
+    if (!isUserInRoom) {
+      throw new ForbiddenException(`User ${userId} does not have access to this room`);
+    }
+  
+    return room;
   }
 }

@@ -3,7 +3,7 @@ import { ChatRoomService } from './room.service';
 import { CreateRoomDto } from './dto/create_room.dto';
 import { UpdateRoomDto } from './dto/update_room.dto';
 
-@Controller('api/chat/rooms')
+@Controller('chatrooms')
 export class ChatRoomController {
   constructor(private readonly chatRoomService: ChatRoomService) {}
 
@@ -13,9 +13,13 @@ export class ChatRoomController {
   }
 
   @Get(':id')
-  async getRoom(@Param('id', ParseIntPipe) id: number) {
+  async getRoom(
+    @Param('id', ParseIntPipe) roomId: number, // roomId는 URL 경로에서 전달
+    @Query('userId', ParseIntPipe) userId: number, // userId는 쿼리 매개변수로 전달
+  ) {
     try {
-      return await this.chatRoomService.findRoomById(id);
+      console.log(`User ${userId} is accessing room ${roomId}`);
+      return await this.chatRoomService.findRoomByIdAndUser(roomId, userId);
     } catch (error) {
       throw new NotFoundException(error.message);
     }

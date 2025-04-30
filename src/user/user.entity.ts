@@ -1,5 +1,5 @@
 // user.entity.ts
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 
 import { HiforEvent } from 'src/events/events.entity';
 import { Participant } from 'src/participant/participant.entity';
@@ -7,6 +7,7 @@ import { Like } from 'src/likes/likes.entity';
 import {Review} from 'src/review/review.entity'
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { ChatMessage } from 'src/chat/message/message.entity';
+import { ChatRoom } from 'src/chat/room/room.entity';
 
 @Entity()
 export class User extends BaseEntity{
@@ -63,4 +64,9 @@ export class User extends BaseEntity{
 
   @OneToMany(() => ChatMessage, message => message.sender)
   messages: ChatMessage[];
+
+  // ChatRoom과의 관계 추가
+  @ManyToOne(() => ChatRoom, room => room.users, { nullable: true })
+  @JoinColumn({ name: 'roomId' }) // 외래 키 컬럼 이름 설정
+  room: ChatRoom;
 }

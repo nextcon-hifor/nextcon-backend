@@ -63,6 +63,15 @@ export class ParticipantService {
         status,
         answer,
       });
+
+        // 참가자가 승인된 경우 채팅방에 추가
+      if (status === 'Approved' && event.chatRoom) {
+        if (!event.chatRoom.users) {
+          event.chatRoom.users = [];
+        }
+        event.chatRoom.users.push(user); // 채팅방에 사용자 추가
+        await this.eventRepository.save(event); // 이벤트 저장 (채팅방 업데이트)
+      }
   
       await this.emailService.sendCreatePartiEmail(
         event.createdBy.email, // 메일 수신자는 호스트
@@ -177,6 +186,21 @@ export class ParticipantService {
   
       participant.status = status;
       const updatedParticipant = await this.participantRepository.save(participant);
+
+        // 상태가 Approved인 경우 채팅방에 사용자 추가
+      if (status === 'Approved' && curEvent.chatRoom) {
+        const user = participant.user;
+
+        // 채팅방에 사용자가 이미 추가되어 있는지 확인
+        const isUserInRoom = curEvent.chatRoom.users.some(
+          (roomUser) => roomUser.id === user.id,
+        );
+
+        if (!isUserInRoom) {
+          curEvent.chatRoom.users.push(user); // 채팅방에 사용자 추가
+          await this.eventRepository.save(curEvent); // 이벤트 저장 (채팅방 업데이트)
+        }
+      }
   
       // 이메일 전송: 상태에 따라 각각 다른 템플릿 사용
       try {

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn,OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn,OneToMany, JoinColumn, OneToOne } from 'typeorm';
 import { User } from '../user/user.entity'; 
 import { Participant } from 'src/participant/participant.entity';
 import { Like } from 'src/likes/likes.entity';
@@ -6,6 +6,7 @@ import { eventImage } from 'src/image/image.entity';
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { IsOptional, IsString } from 'class-validator';
 import {Review} from '../review/review.entity'
+import { ChatRoom } from 'src/chat/room/room.entity';
 
 @Entity('hifor_event')
 export class HiforEvent extends BaseEntity {
@@ -65,6 +66,11 @@ export class HiforEvent extends BaseEntity {
 
   @OneToMany(() => Review, (review) => review.event)
   reviews: Review[];
+
+  // ChatRoom과의 1:1 관계 설정
+  @OneToOne(() => ChatRoom, { nullable: true, cascade: true })
+  @JoinColumn({ name: 'roomId' }) // 외래 키 컬럼 이름 설정
+  chatRoom: ChatRoom;
 
 }
 
