@@ -20,7 +20,7 @@ async function bootstrap() {
   expressApp.set('trust proxy', 1); // ✅ 프록시 인식 (필수)
   app.enableCors({
     origin: (origin, callback) => {
-      const allowedOrigins = [frontendUrl, 'https://www.hifor.kr'];
+      const allowedOrigins = [frontendUrl, 'https://www.hifor.kr','https://nextcon-frontend-kappa.vercel.app'];
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
