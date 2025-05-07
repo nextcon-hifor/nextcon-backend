@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, NotFoundException, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  ParseIntPipe,
+  NotFoundException,
+  Query,
+} from '@nestjs/common';
 import { ChatRoomService } from './room.service';
 import { CreateRoomDto } from './dto/create_room.dto';
 import { UpdateRoomDto } from './dto/update_room.dto';
@@ -15,7 +26,7 @@ export class ChatRoomController {
   @Get(':id')
   async getRoom(
     @Param('id', ParseIntPipe) roomId: number, // roomId는 URL 경로에서 전달
-    @Query('userId', ParseIntPipe) userId: number, // userId는 쿼리 매개변수로 전달
+    @Query('userId') userId: string, // userId는 쿼리 매개변수로 전달
   ) {
     try {
       console.log(`User ${userId} is accessing room ${roomId}`);

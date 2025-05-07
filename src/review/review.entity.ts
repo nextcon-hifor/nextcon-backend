@@ -9,6 +9,7 @@ export class Review extends BaseEntity{
   @PrimaryGeneratedColumn()
   id: number;
 
+
   @Column({ type: 'float', nullable: true })
   rating: number;
 

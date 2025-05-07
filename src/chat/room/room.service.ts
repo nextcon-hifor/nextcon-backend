@@ -62,7 +62,7 @@ export class ChatRoomService {
     }
   }
 
-  async findRoomByIdAndUser(roomId: number, userId: number) {
+  async findRoomByIdAndUser(roomId: number, userId: string) {
     const room = await this.chatRoomRepository.findOne({
       where: { id: roomId },
       relations: ['users','messages'], // 채팅방의 유저 목록 로드
@@ -72,12 +72,12 @@ export class ChatRoomService {
       throw new NotFoundException(`Room with ID ${roomId} not found`);
     }
   
-    // 사용자가 채팅방의 유저인지 확인
-    const isUserInRoom = room.users.some(user => user.id === userId);
+  
+    const isUserInRoom = room.users.some((user) => user.userId === userId);
     if (!isUserInRoom) {
       throw new ForbiddenException(`User ${userId} does not have access to this room`);
     }
-  
-    return room;
+    
+  return room;
   }
 }

@@ -3,17 +3,19 @@ import { Server, Socket } from 'socket.io';
 import { ChatRoomService } from './room.service';
 import { CreateRoomDto } from './dto/create_room.dto';
 
-@WebSocketGateway({
-  cors: { origin: '*' },
+@WebSocketGateway({ //socket gateway
+  cors: { origin: 'https://www.hifor.kr' }, //적절히 설정
+  path: '/socket.io',
 })
 export class ChatRoomGateway implements OnGatewayConnection {
-  @WebSocketServer()
+  @WebSocketServer() //server 주입
   server: Server;
 
+  //room 관련 logic
   constructor(private readonly chatRoomService: ChatRoomService) {}
 
   async handleConnection(client: Socket) {
-    try {
+    try { //연결시마다
       const rooms = await this.chatRoomService.findRoom('EVENT');
       client.emit('rooms', rooms);
     } catch (error) {
