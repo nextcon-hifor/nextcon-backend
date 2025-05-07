@@ -6,10 +6,6 @@ export class UpdateRoomDto {
   name?: string;
 
   @IsOptional()
-  @IsString()
-  type?: string;
-
-  @IsOptional()
   @IsDate()
   lastMessageAt?: Date;
 }
