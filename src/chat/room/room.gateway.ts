@@ -4,7 +4,22 @@ import { ChatRoomService } from './room.service';
 import { CreateRoomDto } from './dto/create_room.dto';
 
 @WebSocketGateway({ //socket gateway
-  cors: { origin: 'https://www.hifor.kr' }, //적절히 설정
+  cors: {
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        'https://www.hifor.kr',
+        'http://localhost:3000',
+        'http://localhost:8081',
+        'https://nextcon-frontend-kappa.vercel.app',
+      ];
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  },
   path: '/socket.io',
 })
 export class ChatRoomGateway implements OnGatewayConnection {
