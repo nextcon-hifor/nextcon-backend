@@ -3,7 +3,7 @@ import { Controller, Post, Get, Patch, Delete, Body, Param, ParseIntPipe } from 
 import { ChatMessageService } from './message.service';
 import { CreateMessageDto } from './dto/create_message.dto';
 
-@Controller('api/chat/messages')
+@Controller('chatmessages')
 export class ChatMessageController {
   constructor(private readonly chatMessageService: ChatMessageService) {}
 
