@@ -24,7 +24,7 @@ export class ChatMessageService {
   }
 
   //msg create-> save in DB
-  async saveMessage(dto: CreateMessageDto): Promise<ChatMessage> { //content, sender, roomId, senderId
+  async saveMessage(dto: CreateMessageDto): Promise<ChatMessage> { 
     if (dto.roomId === undefined) {
       throw new NotFoundException('Room ID is undefined');
     }

@@ -16,7 +16,7 @@ export class ChatRoomGateway implements OnGatewayConnection {
 
   async handleConnection(client: Socket) {
     try { //연결시마다
-      const rooms = await this.chatRoomService.findRoom('EVENT');
+      const rooms = await this.chatRoomService.findRoom();
       client.emit('rooms', rooms);
     } catch (error) {
       client.emit('error', { message: 'Failed to fetch rooms' });

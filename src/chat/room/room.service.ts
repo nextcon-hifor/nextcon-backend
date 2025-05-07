@@ -13,9 +13,8 @@ export class ChatRoomService {
     private chatRoomRepository: Repository<ChatRoom>,
   ) {}
 
-  async findRoom(type: string): Promise<ChatRoom[]> {
+  async findRoom(): Promise<ChatRoom[]> {
     return await this.chatRoomRepository.find({
-      where: { type },
       relations: ['messages'],
       order: {
         lastMessageAt: 'DESC',
@@ -49,9 +48,6 @@ export class ChatRoomService {
     if (dto.name !== undefined) {
       room.name = dto.name;
     }
-    if (dto.type !== undefined) {
-      room.type = dto.type;
-    }
     return await this.chatRoomRepository.save(room);
   }
 
@@ -73,10 +69,10 @@ export class ChatRoomService {
     }
   
   
-    const isUserInRoom = room.users.some((user) => user.userId === userId);
-    if (!isUserInRoom) {
-      throw new ForbiddenException(`User ${userId} does not have access to this room`);
-    }
+    // const isUserInRoom = room.users.some((user) => user.userId === userId);
+    // if (!isUserInRoom) {
+    //   throw new ForbiddenException(`User ${userId} does not have access to this room`);
+    // }
     
   return room;
   }

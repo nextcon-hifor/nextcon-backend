@@ -19,8 +19,8 @@ export class ChatRoomController {
   constructor(private readonly chatRoomService: ChatRoomService) {}
 
   @Get()
-  async listRooms(@Query('type') type: string = 'EVENT') {
-    return await this.chatRoomService.findRoom(type);
+  async listRooms() {
+    return await this.chatRoomService.findRoom();
   }
 
   @Get(':id')

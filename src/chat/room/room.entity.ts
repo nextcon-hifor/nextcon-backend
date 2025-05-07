@@ -11,9 +11,6 @@ export class ChatRoom {
   @Column()
   name: string;
 
-  @Column({ type: 'varchar', length: 20 })
-  type: string; // EVENT, GENERAL 등의 타입을 저장
-
   @OneToMany(() => ChatMessage, message => message.room)
   messages: ChatMessage[];
 
