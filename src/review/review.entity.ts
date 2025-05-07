@@ -1,14 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { User } from '../user/user.entity';
 import { HiforEvent } from '../events/events.entity';
 import { BaseEntity } from 'src/common/entities/base.entity';
+import { ReviewImage } from '../review-image/review-image.entity';
 
 @Entity('reviews')
 export class Review extends BaseEntity{
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'int', nullable: true })
+
+  @Column({ type: 'float', nullable: true })
   rating: number;
 
   @Column({ type: 'text', nullable: true })
@@ -19,4 +21,7 @@ export class Review extends BaseEntity{
 
   @ManyToOne(() => HiforEvent, (event) => event.reviews, { onDelete: 'CASCADE' })
   event: HiforEvent;
+
+  @OneToMany(() => ReviewImage, (image) => image.review, { cascade: true })
+  images: ReviewImage[];
 }
