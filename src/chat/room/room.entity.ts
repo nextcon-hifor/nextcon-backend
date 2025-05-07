@@ -26,9 +26,9 @@ export class ChatRoom {
   @Column({ nullable: true })
   lastMessageAt: Date;
 
-  @OneToMany(() => User, user => user.room)
+  @OneToMany(() => User, (user) => user.room)
   users: User[]; // 방에 속한 사용자들
 
-  @OneToOne(() => HiforEvent, event => event.chatRoom, { nullable: true })
+  @OneToOne(() => HiforEvent, (event) => event.chatRoom, { nullable: true })
   event: HiforEvent;
 }
