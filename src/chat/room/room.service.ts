@@ -15,7 +15,8 @@ export class ChatRoomService {
 
   async findRoom(): Promise<ChatRoom[]> {
     return await this.chatRoomRepository.find({
-      relations: ['messages'],
+      relations: ['messages', 'users', 'event', 'event.createdBy'], //load data x(null)
+      //module: repo주입 x
       order: {
         lastMessageAt: 'DESC',
         createdAt: 'DESC',
@@ -26,7 +27,7 @@ export class ChatRoomService {
   async findRoomById(id: number): Promise<ChatRoom> {
     const room = await this.chatRoomRepository.findOne({
       where: { id },
-      relations: ['messages'],
+      relations: ['messages', 'users', 'event', 'event.createdBy'],
     });
     if (!room) {
       throw new NotFoundException(`Chat room with ID "${id}" not found`);
@@ -38,8 +39,23 @@ export class ChatRoomService {
     const room = this.chatRoomRepository.create({
       ...dto,
       lastMessageAt: new Date(),
+      users: [],  // 빈 배열로 초기화
     });
-    return await this.chatRoomRepository.save(room);
+    
+    // 채팅방 저장
+    const savedRoom = await this.chatRoomRepository.save(room);
+    
+    // 저장된 채팅방을 다시 조회하여 관계가 제대로 설정되었는지 확인
+    const roomWithRelations = await this.chatRoomRepository.findOne({
+      where: { id: savedRoom.id },
+      relations: ['users', 'event'],
+    });
+    
+    if (!roomWithRelations) {
+      throw new Error('Failed to create chat room');
+    }
+    
+    return roomWithRelations;
   }
 
   async updateRoom(id: number, dto: UpdateRoomDto): Promise<ChatRoom> {
@@ -61,7 +77,7 @@ export class ChatRoomService {
   async findRoomByIdAndUser(roomId: number, userId: string) {
     const room = await this.chatRoomRepository.findOne({
       where: { id: roomId },
-      relations: ['users','messages'], // 채팅방의 유저 목록 로드
+      relations: ['users','messages','event'], // 채팅방의 유저 목록 로드
     });
   
     if (!room) {

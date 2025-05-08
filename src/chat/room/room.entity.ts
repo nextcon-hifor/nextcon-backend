@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn } from 'typeorm';
 import { ChatMessage } from '../message/message.entity';
 import { User } from 'src/user/user.entity';
 import { HiforEvent } from 'src/events/events.entity';
@@ -23,9 +23,10 @@ export class ChatRoom {
   @Column({ nullable: true })
   lastMessageAt: Date;
 
-  @OneToMany(() => User, (user) => user.room)
-  users: User[]; // 방에 속한 사용자들
+  @OneToMany(() => User, (user) => user.room, {cascade: true})
+  users: User[]; // participant보다 user로 구현하는게 직관적
 
-  @OneToOne(() => HiforEvent, (event) => event.chatRoom, { nullable: true })
+  @OneToOne(() => HiforEvent, (event) => event.chatRoom) //참조할거, 참조할 col
+  @JoinColumn({ name: 'eventId' })
   event: HiforEvent;
 }

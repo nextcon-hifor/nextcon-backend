@@ -47,7 +47,7 @@ import { ChatRoomService } from 'src/chat/room/room.service';
    * - 전체 작업은 트랜잭션으로 묶여 있어 중간에 오류 발생 시 롤백됨
    */
   async createEvent(createEventDto: CreateEventDto): Promise<HiforEvent> {
-    const queryRunner = this.dataSource.createQueryRunner();
+    const queryRunner = this.dataSource.createQueryRunner(); //db연결 객체(repo대신)
     await queryRunner.startTransaction();
 
     try {
@@ -78,6 +78,20 @@ import { ChatRoomService } from 'src/chat/room/room.service';
       const savedEvent = await queryRunner.manager.save(HiforEvent, event);
       this.logger.verbose(`이벤트 저장 완료: eventId=${savedEvent.id}`);
 
+      const chatRoom= await this.chatRoomService.createRoom({
+        name: `${savedEvent.name} 채팅방`,
+        eventId: savedEvent.id,
+      });
+      this.logger.verbose(`채팅방 생성 완료: roomId=${chatRoom.id}`);
+
+      // 호스트를 채팅방에 추가
+      chatRoom.users = [user];
+      const savedChatRoom = await queryRunner.manager.save(chatRoom);
+
+      // 이벤트와 채팅방 연결
+      savedEvent.chatRoom = savedChatRoom;
+      const finalEvent = await queryRunner.manager.save(savedEvent);
+
       // 이미지가 존재하는 경우 이미지 저장 서비스 호출
       if (images && images.length > 0) {
         this.logger.debug(`이미지 ${images.length}개 저장 중... eventId=${savedEvent.id}`);
@@ -89,7 +103,17 @@ import { ChatRoomService } from 'src/chat/room/room.service';
       await queryRunner.commitTransaction();
       this.logger.log(`트랜잭션 커밋 완료: eventId=${savedEvent.id}`);
 
-      return savedEvent;
+      // 최종 이벤트 조회 시 모든 관계 포함
+      const finalEventWithRelations = await this.eventRepository.findOne({
+        where: { id: finalEvent.id },
+        relations: ['chatRoom', 'chatRoom.users', 'createdBy', 'eventImages', 'reviews'],
+      });
+
+      if (!finalEventWithRelations) {
+        throw new Error('Failed to find created event');
+      }
+
+      return finalEventWithRelations;
     } catch (error) {
       // 트랜잭션 롤백 및 에러 로그 기록
       await queryRunner.rollbackTransaction();
@@ -115,9 +139,9 @@ import { ChatRoomService } from 'src/chat/room/room.service';
     try {
       this.logger.debug('이벤트 전체 조회 시작');
 
-      // 이벤트 전체 조회 (참가자, 좋아요 관계 포함)
+      // 이벤트 전체 조회 (참가자, 좋아요, 리뷰, 채팅방 관계 포함)
       const events = await this.eventRepository.find({
-        relations: ['participants', 'likes'],
+        relations: ['participants', 'likes', 'reviews', 'chatRoom', 'chatRoom.users', 'reviews.user'],
         order: { createdAt: 'DESC' },
       });
 
@@ -157,6 +181,8 @@ import { ChatRoomService } from 'src/chat/room/room.service';
             maxParticipants: event.maxParticipants,
             participants: approvedParticipantsCount,
             likes: event.likes.length,
+            reviews: event.reviews || [],
+            chatRoom: event.chatRoom || null,
           };
         }),
       );
@@ -332,6 +358,8 @@ import { ChatRoomService } from 'src/chat/room/room.service';
         'participants.user',
         'likes',
         'likes.user',
+        'reviews',
+        'chatRoom',
       ],
     });
 
