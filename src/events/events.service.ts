@@ -16,6 +16,7 @@ import { ParticipantService } from 'src/participant/participant.service';
 import { Like } from 'src/likes/likes.entity';
 import { Participant } from 'src/participant/participant.entity';
 import { ChatRoomService } from 'src/chat/room/room.service';
+import { ChatRoom } from 'src/chat/room/room.entity';
   
   @Injectable()
   export class EventsService {
@@ -36,7 +37,9 @@ import { ChatRoomService } from 'src/chat/room/room.service';
       @InjectRepository(HiforEvent)
       private eventRepository: Repository<HiforEvent>,
       @InjectRepository(User)
-      private userRepository: Repository<User>,      
+      private userRepository: Repository<User>,
+      // @InjectRepository(ChatRoom)
+      // private chatRoomRepository: Repository<ChatRoom>,   
     ) {}
     private readonly logger = new Logger(EventsService.name);
 

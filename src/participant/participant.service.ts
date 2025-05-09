@@ -6,6 +6,7 @@ import { EmailService } from 'src/mail/mail.service';
 import { Like } from 'src/likes/likes.entity';
 import { HiforEvent } from 'src/events/events.entity';
 import { User } from 'src/user/user.entity';
+import { ChatRoom } from 'src/chat/room/room.entity';
 
 @Injectable()
 export class ParticipantService {
@@ -21,6 +22,8 @@ export class ParticipantService {
     private userRepository: Repository<User>,     
     @InjectRepository(HiforEvent)
     private eventRepository: Repository<HiforEvent>,
+    @InjectRepository(ChatRoom)
+    private chatRoomRepository: Repository<ChatRoom>,
   ) {}
 
   private readonly logger = new Logger(ParticipantService.name);
@@ -37,7 +40,7 @@ export class ParticipantService {
 
       const event = await eventRepository.findOne({
         where: { id: eventId },
-        relations: ['createdBy', 'participants', 'chatRoom'],
+        relations: ['createdBy', 'participants', 'chatRoom', 'chatRoom.users'],
       });
       this.logger.verbose(`eventId: ${eventId}`);
       if (!event) {
@@ -76,14 +79,19 @@ export class ParticipantService {
       event.participants.push(participant);
 
         // 참가자가 승인된 경우 채팅방에 추가
+        // chatroom.users 필드 자체를 save해줘야(eventRepo.save로 불충분)
       if (status === 'Approved' && event.chatRoom) {
         event.chatRoom.users = event.chatRoom.users || [];
-        event.chatRoom.users.push(user); // 채팅방에 사용자 추가
+        //중복등록 방지
+        if (!event.chatRoom.users.some(u => u.userId === user.userId)) {
+          event.chatRoom.users.push(user);
+        }
 
-        if (manager) //transaction 내에선 em으로 저장
-          await manager.save(event);
+        //chatroomRepo 별도 save
+        if (manager) 
+          await manager.save(event.chatRoom);
         else 
-          await this.eventRepository.save(event); // 이벤트 저장 (채팅방 업데이트)
+          await this.chatRoomRepository.save(event.chatRoom);
       }
   
       await this.emailService.sendCreatePartiEmail(
@@ -98,6 +106,7 @@ export class ParticipantService {
         }
       )
       
+      //participant entity 저장(em으로)
       if (manager)
         return await manager.save(participant);
       else
