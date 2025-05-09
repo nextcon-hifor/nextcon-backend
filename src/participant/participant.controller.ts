@@ -16,6 +16,20 @@ export class ParticipantController {
       return await this.participantService.createParticipant(eventId, userId, answer);
     }
 
+    @Post('cancelParticipation')
+    async cancelParticipation(
+      @Body() cancelParticipationDto: { userId: string; eventId: number }
+    ): Promise<{ message: string }> {
+      const { userId, eventId } = cancelParticipationDto;
+
+      if (!userId || !eventId) {
+        throw new HttpException('Missing userId or eventId', HttpStatus.BAD_REQUEST);
+      }
+
+      await this.eventsService.cancelParticipation(userId, eventId);
+      return { message: 'Participation canceled successfully.' };
+    }
+
     @Patch(':id/status')
     async updateParticipantStatus(
       @Param('id') participantId: number,
@@ -34,24 +48,11 @@ export class ParticipantController {
       @Query('eventId') eventId: number,
       @Query('userId') userId: string
     ): Promise<{ isParticipating: boolean }> {
-      console.log(userId,eventId)
+      console.log(userId,eventId);
       const isParticipating = await this.participantService.checkParticipation(eventId, userId);
       return { isParticipating };
     }
 
-    @Post('cancelParticipation')
-    async cancelParticipation(
-      @Body() cancelParticipationDto: { userId: string; eventId: number }
-    ): Promise<{ message: string }> {
-      const { userId, eventId } = cancelParticipationDto;
-
-      if (!userId || !eventId) {
-        throw new HttpException('Missing userId or eventId', HttpStatus.BAD_REQUEST);
-      }
-
-      await this.eventsService.cancelParticipation(userId, eventId);
-      return { message: 'Participation canceled successfully.' };
-    }
     @Get('getParticipatedEvent/:userId')
     async getParticipatedEvent(@Param('userId') participatedId: string) {
       return await this.participantService.getParticipatedEvent(participatedId);

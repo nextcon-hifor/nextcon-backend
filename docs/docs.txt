@@ -1,37 +1,43 @@
-FE
-src/
-  components/
-    ChatMain.vue: 
-    ChatListItem.vue: 2
-    ChatRoomHeader: 3
-    ChatMessage: 4,5 
-    ChatComposer: input
-    ChatRoom: 6
-    LoginForm
-
-src/
-  chat/
-    message/
-      create-message.dto.ts
-      chat-message.entity.ts
-    room/
-      create-room.dto.ts
-      chat-room.entity.ts
-    chat.module.ts
-    chat.service.ts
-    chat.gateway.ts
-      
-
-ERD
-message: id, content, senderId, roomId, timestamp, room
-room: id, name, type, msg, createdAt(date), updatedAt, lastMsgAt
-user: id, password, email, username, about, image, friends, blocked, requests
-auth
-
-Service
-find
-
-
-Ctrlr
-api/chat/rooms
-listRooms
+event resp_body
+{
+        "id": 60,
+        "name": "0509",
+        "description": "",
+        "mainImage": null,
+        "location": "Jongno-gu",
+        "date": "2025-05-27",
+        "type": "FirstCome",
+        "category": "Social",
+        "price": 0,
+        "maxParticipants": 2,
+        "participants": 0,
+        "likes": 0,
+        "reviews": [],
+        "chatRoom": {
+            "id": 34,
+            "name": "0509 채팅방",
+            "createdAt": "2025-05-08T18:56:43.629Z",
+            "updatedAt": "2025-05-08T18:56:41.724Z",
+            "lastMessageAt": "2025-05-09T03:56:43.581Z",
+            "users": [
+                {
+                    "createdAt": "2025-05-07T21:14:49.126Z",
+                    "updatedAt": "2025-05-08T18:56:41.724Z",
+                    "createdById": 0,
+                    "updatedById": 0,
+                    "id": 93,
+                    "email": "bigstake82@gmail.com",
+                    "password": "$2b$10$KlBTlfSzJhEgYp1xBB2XNexu/G2sgqd1ZOmuytffpMc10L52bs/mG",
+                    "username": "chang",
+                    "userId": "bigstake82",
+                    "profileImage": null,
+                    "phoneNumber": null,
+                    "nationality": "American Samoa",
+                    "dob": "2002-09-03",
+                    "gender": "male",
+                    "university": null,
+                    "passwordLastChanged": "2025-05-07T21:14:49.126Z",
+                    "passwordReset": false
+                }
+            ]
+        }
