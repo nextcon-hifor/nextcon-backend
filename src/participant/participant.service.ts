@@ -1,6 +1,6 @@
-import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, EntityManager } from 'typeorm';
 import { Participant } from './participant.entity';
 import { EmailService } from 'src/mail/mail.service';
 import { Like } from 'src/likes/likes.entity';
@@ -9,6 +9,7 @@ import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class ParticipantService {
+
   constructor(
     @InjectRepository(Participant)
     private participantRepository: Repository<Participant>,
@@ -22,17 +23,23 @@ export class ParticipantService {
     private eventRepository: Repository<HiforEvent>,
   ) {}
 
+  private readonly logger = new Logger(ParticipantService.name);
 
     //participant
     async createParticipant(
       eventId: number,
       _userId: string,
       answer: string,
+      manager?: EntityManager, //err: eventId로 event 저장-> 조회시, 같은 queryRunner.manager 사용해야
+      //this.eventRepository는 안됨
     ): Promise<Participant> {
-      const event = await this.eventRepository.findOne({
+      const eventRepository = manager ? manager.getRepository(HiforEvent) : this.eventRepository;
+
+      const event = await eventRepository.findOne({
         where: { id: eventId },
-        relations: ['createdBy'],
+        relations: ['createdBy', 'participants', 'chatRoom'],
       });
+      this.logger.verbose(`eventId: ${eventId}`);
       if (!event) {
         throw new Error('Event not found');
       }
@@ -50,13 +57,14 @@ export class ParticipantService {
           user: { userId: _userId },
         },
       });
-  
       if (existingParticipant) {
         throw new HttpException('User has already joined this event', HttpStatus.BAD_REQUEST);
       }
   
+      //event가 Register면 pend, 아니면 approve
       const status = event.type === 'Register' ? 'Pending' : 'Approved';
   
+      //participant entity 생성
       const participant = this.participantRepository.create({
         event,
         user,
@@ -64,13 +72,18 @@ export class ParticipantService {
         answer,
       });
 
+      event.participants= event.participants || []; //없으면 추가
+      event.participants.push(participant);
+
         // 참가자가 승인된 경우 채팅방에 추가
       if (status === 'Approved' && event.chatRoom) {
-        if (!event.chatRoom.users) {
-          event.chatRoom.users = [];
-        }
+        event.chatRoom.users = event.chatRoom.users || [];
         event.chatRoom.users.push(user); // 채팅방에 사용자 추가
-        await this.eventRepository.save(event); // 이벤트 저장 (채팅방 업데이트)
+
+        if (manager) //transaction 내에선 em으로 저장
+          await manager.save(event);
+        else 
+          await this.eventRepository.save(event); // 이벤트 저장 (채팅방 업데이트)
       }
   
       await this.emailService.sendCreatePartiEmail(
@@ -84,12 +97,15 @@ export class ParticipantService {
           eventId: event.id,
         }
       )
-  
-      return await this.participantRepository.save(participant);
+      
+      if (manager)
+        return await manager.save(participant);
+      else
+        return await this.participantRepository.save(participant);
   
     }
 
-
+    //user가 참여한 event
     async getParticipatedEvent(participatedId: string) {
       try {
         const participants = await this.participantRepository.find({
@@ -108,7 +124,7 @@ export class ParticipantService {
         // 데이터 매핑
         const mappedEvents = await Promise.all(
           events.map(async (event) => {
-            // Approved 참가자 수 계산
+            // event의 Approved 참가자 수 계산
             const approvedParticipantsCount =
               await this.participantRepository.count({
                 where: {
@@ -147,7 +163,7 @@ export class ParticipantService {
     }
   
   
-    // 사용자 참여 여부 확인
+    // event에 대한 user 참여 여부 확인
     async checkParticipation(eventId: number, _userId: string): Promise<boolean> {
       const user = await this.userRepository.findOne({
         where: { userId: _userId },
@@ -162,6 +178,7 @@ export class ParticipantService {
       return !!participation; // 값이 존재하면 true, 없으면 false
     }
     
+    //
     async updateStatus(
       participantId: number,
       status: string,
@@ -176,7 +193,7 @@ export class ParticipantService {
         where: { id: eventId}
       })
 
-      //예외처리리
+      //예외처리
       if (!curEvent) {
         throw new NotFoundException(`event with ID ${eventId} not found`);
       }
@@ -240,38 +257,38 @@ export class ParticipantService {
       });
     }
 
-  // participant.service.ts
 
-async countApprovedParticipantsByEvent(eventId: number): Promise<number> {
-  return this.participantRepository.count({
-    where: {
-      event: { id: eventId },
-      status: 'Approved',
-    },
-  });
-}
-
-async getParticipantsByEventId(eventId: number): Promise<{ email: string }[]> {
-  try {
-    const event = await this.eventRepository.findOne({
-      where: { id: eventId },
-      relations: ['participants','participants.user'], // 참가자와의 관계를 로드
+  //특정 event의 approved_user#
+  async countApprovedParticipantsByEvent(eventId: number): Promise<number> {
+    return this.participantRepository.count({
+      where: {
+        event: { id: eventId },
+        status: 'Approved',
+      },
     });
-
-    if (!event) {
-      throw new HttpException('Event not found.', HttpStatus.NOT_FOUND);
-    }
-
-    return event.participants.map((participant) => ({
-      email: participant.user.email, // 참가자의 이메일 반환
-    }));
-  } catch (error) {
-    console.error('Error fetching participants:', error);
-    throw new HttpException(
-        'Failed to fetch participants. Please try again.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-    );
   }
-}
+
+  async getParticipantsByEventId(eventId: number): Promise<{ email: string }[]> {
+    try {
+      const event = await this.eventRepository.findOne({
+        where: { id: eventId },
+        relations: ['participants','participants.user'], // 참가자와의 관계를 로드
+      });
+
+      if (!event) {
+        throw new HttpException('Event not found.', HttpStatus.NOT_FOUND);
+      }
+
+      return event.participants.map((participant) => ({
+        email: participant.user.email, // 참가자의 이메일 반환
+      }));
+    } catch (error) {
+      console.error('Error fetching participants:', error);
+      throw new HttpException(
+          'Failed to fetch participants. Please try again.',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 
 }

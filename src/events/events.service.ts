@@ -54,7 +54,7 @@ import { ChatRoomService } from 'src/chat/room/room.service';
       // 트랜잭션 시작 로그 (디버깅용)
       this.logger.debug('createEvent 트랜잭션 시작');
 
-      // 사용자 존재 여부 확인
+      // event host
       const user = await this.userRepository.findOneBy({
         userId: createEventDto.userId,
       });
@@ -78,19 +78,25 @@ import { ChatRoomService } from 'src/chat/room/room.service';
       const savedEvent = await queryRunner.manager.save(HiforEvent, event);
       this.logger.verbose(`이벤트 저장 완료: eventId=${savedEvent.id}`);
 
+      //chatroom 생성
       const chatRoom= await this.chatRoomService.createRoom({
         name: `${savedEvent.name} 채팅방`,
         eventId: savedEvent.id,
       });
       this.logger.verbose(`채팅방 생성 완료: roomId=${chatRoom.id}`);
 
-      // 호스트를 채팅방에 추가
+      // host를 chatroom에 추가
       chatRoom.users = [user];
       const savedChatRoom = await queryRunner.manager.save(chatRoom);
 
       // 이벤트와 채팅방 연결
       savedEvent.chatRoom = savedChatRoom;
       const finalEvent = await queryRunner.manager.save(savedEvent);
+
+      //event host를 참가자로 자동 추가
+      await this.participantService.createParticipant(savedEvent.id, user.userId, '', queryRunner.manager);
+      this.logger.verbose(`이벤트 host를 participants에 등록 완료: userId=${user.userId}`);
+
 
       // 이미지가 존재하는 경우 이미지 저장 서비스 호출
       if (images && images.length > 0) {
@@ -179,6 +185,7 @@ import { ChatRoomService } from 'src/chat/room/room.service';
             category: event.category,
             price: event.price,
             maxParticipants: event.maxParticipants,
+            minParticipants: event.minParticipants,
             participants: approvedParticipantsCount,
             likes: event.likes.length,
             reviews: event.reviews || [],
@@ -247,6 +254,7 @@ import { ChatRoomService } from 'src/chat/room/room.service';
               category: event.category,
               price: event.price,
               maxParticipants: event.maxParticipants,
+              minParticipants: event.minParticipants,
               participants: approvedParticipantsCount,
               likes: event.likes.length,
             };
@@ -320,6 +328,7 @@ import { ChatRoomService } from 'src/chat/room/room.service';
               category: event.hifor_event_category,
               price: event.hifor_event_price,
               maxParticipants: event.hifor_event_maxParticipants,
+              minParticipants: event.hifor_event_minParticipants,
               participants: approvedParticipantsCount,
               likes: parseInt(event.likeCount, 10),
             };
@@ -504,6 +513,7 @@ import { ChatRoomService } from 'src/chat/room/room.service';
           category: event.category,
           price: event.price,
           maxParticipants: event.maxParticipants,
+          minParticipants: event.minParticipants,
           participants: approvedParticipantsCount,
           likes: event.likes.length,
         };
@@ -556,6 +566,7 @@ import { ChatRoomService } from 'src/chat/room/room.service';
             category: event.category,
             price: event.price,
             maxParticipants: event.maxParticipants,
+            minParticipants: event.minParticipants,
             participants: approvedParticipantsCount,
             likes: event.likes.length,
             createdBy: {
@@ -624,6 +635,7 @@ import { ChatRoomService } from 'src/chat/room/room.service';
             category: event.category,
             price: event.price,
             maxParticipants: event.maxParticipants,
+            minParticipants: event.minParticipants,
             createdBy: {
               username: event.createdBy?.username,
               userId: event.createdBy?.userId,
@@ -720,6 +732,7 @@ import { ChatRoomService } from 'src/chat/room/room.service';
               category: event.category,
               price: event.price,
               maxParticipants: event.maxParticipants,
+              minParticipants: event.minParticipants,
               createdBy: {
                 name: event.createdBy?.username,
                 userId: event.createdBy?.userId,

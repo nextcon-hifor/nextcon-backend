@@ -6,7 +6,7 @@ import { BaseEntity } from 'src/common/entities/base.entity';
 @Entity('participant')
 export class Participant extends BaseEntity {
   @PrimaryGeneratedColumn()
-  id: number; // 참가자 고유 식별자
+  id: number; // 참가자 고유 식별자 //event마다 각 user
 
   @ManyToOne(() => HiforEvent, (event) => event.participants, { onDelete: 'CASCADE' })
   event: HiforEvent; // 참가자가 등록한 이벤트
