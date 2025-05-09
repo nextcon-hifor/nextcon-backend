@@ -1,5 +1,5 @@
 // user.entity.ts
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToMany, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 
 import { HiforEvent } from 'src/events/events.entity';
 import { Participant } from 'src/participant/participant.entity';
@@ -66,7 +66,6 @@ export class User extends BaseEntity{
   messages: ChatMessage[];
 
   // ChatRoom과의 관계 추가
-  @ManyToOne(() => ChatRoom, room => room.users, { nullable: true })
-  @JoinColumn({ name: 'roomId' }) // 외래 키 컬럼 이름 설정
+  @ManyToMany(() => ChatRoom, room => room.users, { nullable: true })
   room: ChatRoom;
 }
