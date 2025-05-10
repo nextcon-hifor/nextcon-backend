@@ -39,7 +39,7 @@ import { ChatMessageModule } from './chat/message/message.module';
           type: 'postgres',
           url: databaseUrl,
           autoLoadEntities: true,
-          synchronize: configService.get<boolean>('DB_SYNCHRONIZE', false),
+          synchronize: configService.get<boolean>('DB_SYNCHRONIZE', true),
           logging: configService.get<boolean>('DB_LOGGING', false),
         };
       },

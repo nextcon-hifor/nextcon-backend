@@ -801,43 +801,63 @@ import { ChatRoom } from 'src/chat/room/room.entity';
    */
     async deleteEvent(eventId: number): Promise<boolean> {
       this.logger.debug(`이벤트 삭제 시도: eventId=${eventId}`);
-  
-      const queryRunner = this.dataSource.createQueryRunner();
-  
+
+      // 이벤트와 연관된 채팅방, 참가자, 좋아요 등 관계를 함께 로드하여 가져옵니다.
+      const event = await this.eventRepository.findOne({
+        where: { id: eventId },
+        relations: ['chatRoom', 'participants', 'likes'],
+      });
+
+      if (!event) {
+        throw new NotFoundException(`Event with ID ${eventId} not found`);
+      }
+
       try {
-        await queryRunner.connect();
-        await queryRunner.startTransaction();
-  
-        // 참가자 데이터 삭제
-        const deleteParticipants = await queryRunner.manager.delete('participant', {
-          event: { id: eventId },
-        });
-        this.logger.verbose(`삭제된 참가자 수: ${deleteParticipants.affected}`);
-  
-        // 좋아요 데이터 삭제
-        const deleteLikes = await queryRunner.manager.delete('likes', {
-          event: { id: eventId },
-        });
-        this.logger.verbose(`삭제된 좋아요 수: ${deleteLikes.affected}`);
-  
-        // 이벤트 삭제
-        const deleteEvent = await queryRunner.manager.delete('hifor_event', {
-          id: eventId,
-        });
-        this.logger.verbose(`삭제된 이벤트 수: ${deleteEvent.affected}`);
-  
-        await queryRunner.commitTransaction();
-        this.logger.log(`이벤트 삭제 완료: eventId=${eventId}`);
+        // remove()를 사용하면 cascade 옵션이 적용되어 chatRoom도 함께 삭제됩니다.
+        await this.eventRepository.remove(event);
+        this.logger.log(`이벤트 및 연동된 채팅방 삭제 완료: eventId=${eventId}`);
         return true;
       } catch (error) {
         this.logger.error(`이벤트 삭제 중 오류 발생: eventId=${eventId}`, error.stack);
-        await queryRunner.rollbackTransaction();
-        return false;
-      } finally {
-        await queryRunner.release();
-        this.logger.debug(`쿼리러너 해제: eventId=${eventId}`);
+        throw new HttpException('이벤트 삭제 실패', HttpStatus.INTERNAL_SERVER_ERROR);
       }
+  
+      // const queryRunner = this.dataSource.createQueryRunner();
+  
+      // try {
+      //   await queryRunner.connect();
+      //   await queryRunner.startTransaction();
+  
+      //   // 참가자 데이터 삭제
+      //   const deleteParticipants = await queryRunner.manager.delete('participant', {
+      //     event: { id: eventId },
+      //   });
+      //   this.logger.verbose(`삭제된 참가자 수: ${deleteParticipants.affected}`);
+  
+      //   // 좋아요 데이터 삭제
+      //   const deleteLikes = await queryRunner.manager.delete('likes', {
+      //     event: { id: eventId },
+      //   });
+      //   this.logger.verbose(`삭제된 좋아요 수: ${deleteLikes.affected}`);
+  
+      //   // 이벤트 삭제
+      //   const deleteEvent = await queryRunner.manager.delete('hifor_event', {
+      //     id: eventId,
+      //   });
+      //   this.logger.verbose(`삭제된 이벤트 수: ${deleteEvent.affected}`);
+  
+      //   await queryRunner.commitTransaction();
+      //   this.logger.log(`이벤트 삭제 완료: eventId=${eventId}`);
+      //   return true;
+      // } catch (error) {
+      //   this.logger.error(`이벤트 삭제 중 오류 발생: eventId=${eventId}`, error.stack);
+      //   await queryRunner.rollbackTransaction();
+      //   return false;
+      // } finally {
+      //   await queryRunner.release();
+      //   this.logger.debug(`쿼리러너 해제: eventId=${eventId}`);
     }
+    
   
 
 

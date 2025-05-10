@@ -82,7 +82,8 @@ export class HiforEvent extends BaseEntity {
   reviews: Review[];
 
   // ChatRoom과의 1:1 관계 설정
-  @OneToOne(() => ChatRoom, (chatRoom) => chatRoom.event)
+  @OneToOne(() => ChatRoom, (chatRoom) => chatRoom.event, {cascade: true})
+  @JoinColumn({name:'roomId'})
   chatRoom: ChatRoom;
 }
 

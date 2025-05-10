@@ -11,7 +11,7 @@ export class ChatRoom {
   @Column()
   name: string;
 
-  @OneToMany(() => ChatMessage, message => message.room)
+  @OneToMany(() => ChatMessage, message => message.room, {cascade:true})
   messages: ChatMessage[];
 
   @CreateDateColumn()
