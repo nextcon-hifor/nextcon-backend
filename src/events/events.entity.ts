@@ -1,11 +1,21 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn,OneToMany, JoinColumn, OneToOne } from 'typeorm';
-import { User } from '../user/user.entity'; 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  JoinColumn,
+  OneToOne,
+} from 'typeorm';
+import { User } from '../user/user.entity';
 import { Participant } from 'src/participant/participant.entity';
 import { Like } from 'src/likes/likes.entity';
 import { eventImage } from 'src/image/image.entity';
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { IsOptional, IsString } from 'class-validator';
-import {Review} from '../review/review.entity'
+import { Review } from '../review/review.entity';
 import { ChatRoom } from 'src/chat/room/room.entity';
 
 @Entity('hifor_event')
@@ -20,7 +30,7 @@ export class HiforEvent extends BaseEntity {
   description: string; // 이벤트 설명 (선택)
 
   @Column({ type: 'text', nullable: true })
-  question: string
+  question: string;
 
   @Column({ length: 30, nullable: true })
   location: string; // 이벤트 장소 (구 단위)
@@ -55,10 +65,14 @@ export class HiforEvent extends BaseEntity {
   @ManyToOne(() => User, (user) => user.events, { eager: false })
   createdBy: User; // 이벤트 생성자 (User 엔터티와 관계)
 
-  @OneToMany(() => eventImage, (eventImage) => eventImage.event, { cascade: true })
+  @OneToMany(() => eventImage, (eventImage) => eventImage.event, {
+    cascade: true,
+  })
   eventImages: eventImage[];
 
-  @OneToMany(() => Participant, (participant) => participant.event,{ cascade: true })
+  @OneToMany(() => Participant, (participant) => participant.event, {
+    cascade: true,
+  })
   participants: Participant[]; // 이벤트에 연결된 참가자 목록
 
   @OneToMany(() => Like, (like) => like.event, { cascade: true })
@@ -69,9 +83,7 @@ export class HiforEvent extends BaseEntity {
 
   // ChatRoom과의 1:1 관계 설정
   @OneToOne(() => ChatRoom, (chatRoom) => chatRoom.event)
-  @JoinColumn({name:'roomId'})
   chatRoom: ChatRoom;
-
 }
 
 @Entity('adEmails')
