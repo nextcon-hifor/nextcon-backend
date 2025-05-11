@@ -35,8 +35,13 @@ export class ChatMessageService {
     const room = await this.chatRoomService.findRoomById(dto.roomId); //room read하고
     const sender = await this.userRepository.findOne({ where: { id: dto.sender.id } });
   
+    if (!sender) {
+      throw new NotFoundException(`User with ID ${dto.sender.id} not found`);
+    }
     const message = this.chatMessageRepository.create({ //msg 생성
-      ...dto,
+      content: dto.content,
+      roomId: dto.roomId,
+      sender: sender,
       timestamp: new Date(),
     });
 

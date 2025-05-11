@@ -191,7 +191,7 @@ import supabase from '../supabase';
     FileInterceptor('file', {
       storage: undefined,
       fileFilter: (req, file, callback) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|heic|webp)$/)) {
           return callback(new HttpException('Only image files are allowed!', HttpStatus.BAD_REQUEST), false);
         }
         callback(null, true);

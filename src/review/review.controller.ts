@@ -54,7 +54,7 @@ export class ReviewController {
       storage: undefined,
       limits: { fileSize: 5 * 1024 * 1024 },
       fileFilter: (req, file, callback) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|heic|webp)$/)) {
           return callback(
             new HttpException('이미지 파일만 업로드 가능합니다.', HttpStatus.BAD_REQUEST),
             false,
