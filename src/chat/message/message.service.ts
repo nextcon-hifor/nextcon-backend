@@ -6,6 +6,7 @@ import { ChatMessage } from './message.entity';
 import { CreateMessageDto } from './dto/create_message.dto';
 import { UpdateRoomDto } from '../room/dto/update_room.dto';
 import { ChatRoomService } from '../room/room.service';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class ChatMessageService {
@@ -13,6 +14,8 @@ export class ChatMessageService {
     @InjectRepository(ChatMessage)
     private chatMessageRepository: Repository<ChatMessage>,
     private readonly chatRoomService: ChatRoomService,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
   //msg r
@@ -20,6 +23,7 @@ export class ChatMessageService {
     return await this.chatMessageRepository.find({
       where: { roomId },
       order: { timestamp: 'ASC' },
+      relations: ['sender'],
     });
   }
 
@@ -29,6 +33,8 @@ export class ChatMessageService {
       throw new NotFoundException('Room ID is undefined');
     }
     const room = await this.chatRoomService.findRoomById(dto.roomId); //room read하고
+    const sender = await this.userRepository.findOne({ where: { id: dto.sender.id } });
+  
     const message = this.chatMessageRepository.create({ //msg 생성
       ...dto,
       timestamp: new Date(),
@@ -38,7 +44,7 @@ export class ChatMessageService {
     room.lastMessageAt = message.timestamp;
     const updateRoomDto: UpdateRoomDto={
       lastMessageAt: message.timestamp,
-    }
+    };
     await this.chatRoomService.updateRoom(room.id, updateRoomDto);
 
     return await this.chatMessageRepository.save(message);
