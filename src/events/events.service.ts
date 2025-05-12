@@ -544,6 +544,10 @@ import { ChatRoom } from 'src/chat/room/room.entity';
           createdBy: { userId: hostId },
         },
         relations: ['createdBy', 'eventImages', 'participants', 'likes'],
+        order: {
+          date: 'DESC',
+        },
+        
       });
 
       this.logger.verbose(`hostId=${hostId} | 조회된 이벤트 수: ${events.length}`);
@@ -603,6 +607,9 @@ import { ChatRoom } from 'src/chat/room/room.entity';
           user: { userId: likedId },
         },
         relations: ['event', 'event.createdBy', 'event.likes', 'event.participants'],
+        order: {
+          createdAt: 'DESC',
+        }
       });
 
       this.logger.verbose(`userId=${likedId} | 좋아요한 이벤트 수: ${likedEvents.length}`);
