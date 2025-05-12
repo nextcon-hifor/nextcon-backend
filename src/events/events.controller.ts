@@ -133,7 +133,7 @@ import {
         storage: undefined, // Supabase 사용 시 Multer의 storage 필요 없음
         limits: { fileSize: 5 * 1024 * 1024 }, // 5MB 제한
         fileFilter: (req, file, callback) => {
-          if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+          if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|heic|webp)$/)) {
             return callback(new HttpException('Only image files are allowed!', HttpStatus.BAD_REQUEST), false);
           }
           callback(null, true);

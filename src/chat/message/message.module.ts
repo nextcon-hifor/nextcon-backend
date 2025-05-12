@@ -5,10 +5,11 @@ import { ChatMessageService } from './message.service';
 import { ChatMessageController } from './message.controller';
 import { ChatMessageGateway } from './message.gateway';
 import { ChatRoomModule } from '../room/room.module'; // ChatRoomModule import
+import { User } from 'src/user/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ChatMessage]),
+    TypeOrmModule.forFeature([ChatMessage, User]),
     ChatRoomModule, // ChatRoomService 제공 모듈을 import 합니다.
   ],
   controllers: [ChatMessageController],

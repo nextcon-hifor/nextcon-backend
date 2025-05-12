@@ -29,21 +29,31 @@ export class ChatMessageGateway {
 
   constructor(private readonly chatMessageService: ChatMessageService) {}
 
+  @SubscribeMessage('join')
+  handleJoinRoom(
+    @MessageBody() data: { roomId: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.join(`room-${data.roomId}`);
+    // 필요하다면 입장 알림 등 emit 가능
+    console.log(`소켓 ${client.id}가 room-${data.roomId}에 join`);
+  }
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
     @MessageBody() messageDto: CreateMessageDto,
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const savedMessage = await this.chatMessageService.saveMessage(messageDto);
-      
+      const savedMessage =
+        await this.chatMessageService.saveMessage(messageDto);
+
       // 실시간 메시지 브로드캐스트: 'room-{roomId}' 형식의 방에 메시지를 전달
       this.server.to(`room-${messageDto.roomId}`).emit('newMessage', {
         ...savedMessage,
-        sender: client.id,
+        sender: messageDto.sender,
         timestamp: new Date(),
       });
-      
+
       return { success: true, message: savedMessage };
     } catch (error) {
       client.emit('error', { message: 'Failed to send message' });

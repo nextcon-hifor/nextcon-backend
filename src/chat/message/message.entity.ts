@@ -19,7 +19,7 @@ export class ChatMessage {
   @ManyToOne(() => ChatRoom, room => room.messages)
   room: ChatRoom;
 
-  @ManyToOne(() => User, user => user.messages, { nullable: true })
+  @ManyToOne(() => User, user => user.messages)
   @JoinColumn({ name: 'senderId' })
   sender: User;
 }

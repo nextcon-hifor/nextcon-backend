@@ -77,19 +77,33 @@ export class ChatRoomService {
   async findRoomByIdAndUser(roomId: number, userId: string) {
     const room = await this.chatRoomRepository.findOne({
       where: { id: roomId },
-      relations: ['users','messages','event'], // 채팅방의 유저 목록 로드
+      relations: ['users', 'messages', 'messages.sender', 'event'], // 채팅방의 유저 목록 로드
     });
-  
+
     if (!room) {
       throw new NotFoundException(`Room with ID ${roomId} not found`);
     }
-  
-  
+
     // const isUserInRoom = room.users.some((user) => user.userId === userId);
     // if (!isUserInRoom) {
     //   throw new ForbiddenException(`User ${userId} does not have access to this room`);
     // }
-    
-  return room;
+    // sender 정보 필터링 - 필요한 데이터만 유지
+    if (room.messages && room.messages.length > 0) {
+      room.messages = room.messages.map((message) => {
+        if (message.sender) {
+          // 필요한 sender 정보만 남기기
+          message.sender = {
+            id: message.sender.id,
+            username: message.sender.username,
+            userId: message.sender.userId,
+            email: message.sender.email,
+            // 다른 모든 필드는 제외됨
+          } as any; // 타입 호환성을 위한 임시 캐스팅
+        }
+        return message;
+      });
+    }
+    return room;
   }
 }

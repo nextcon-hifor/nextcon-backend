@@ -10,6 +10,7 @@ export class ChatMessageController {
   //msg c
   @Post()
   async sendMessage(@Body() dto: CreateMessageDto) {
+    console.log("Received payload:", dto);
     return await this.chatMessageService.saveMessage(dto);
   }
 
