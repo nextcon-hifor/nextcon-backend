@@ -122,7 +122,11 @@ export class ParticipantService {
             user: { userId: participatedId }, // 특정 userId가 참여한 이벤트
             status: 'Approved', // 승인된 상태만 필터링
           },
-          relations: ['event', 'event.createdBy', 'event.likes', 'event.participants'], // 필요한 관계 로드
+          relations: ['event', 'event.createdBy', 'event.likes', 'event.participants'], // 필요한 관계 로드        
+          order: {
+            createdAt: 'DESC', // 최신순으로 정렬
+          }
+          
         });
   
         // null이 아닌 이벤트만 추출
