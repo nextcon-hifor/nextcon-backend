@@ -78,12 +78,12 @@ export class HiforEvent extends BaseEntity {
   @OneToMany(() => Like, (like) => like.event, { cascade: true })
   likes: Like[]; // 이벤트와 연결된 좋아요 목록
 
-  @OneToMany(() => Review, (review) => review.event)
+  @OneToMany(() => Review, (review) => review.event, { cascade: true })
   reviews: Review[];
 
   // ChatRoom과의 1:1 관계 설정
-  @OneToOne(() => ChatRoom, (chatRoom) => chatRoom.event, {cascade: true})
-  @JoinColumn({name:'roomId'})
+  @OneToOne(() => ChatRoom, (chatRoom) => chatRoom.event, { cascade: true })
+  @JoinColumn({ name: 'roomId' })
   chatRoom: ChatRoom;
 }
 

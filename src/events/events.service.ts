@@ -1,48 +1,46 @@
 import {
-    HttpException,
-    HttpStatus,
-    Injectable,
-    Logger,
-    NotFoundException,
-  } from '@nestjs/common';
-  import { InjectRepository } from '@nestjs/typeorm';
-  import { DataSource, MoreThanOrEqual, Repository } from 'typeorm';
-  import { AdEmail, HiforEvent } from './events.entity';
-  import { User } from '../user/user.entity';
-  import { CreateEventDto, SearchEventDto } from './events.dto';
-  import { EmailService } from '../mail/mail.service';
+  HttpException,
+  HttpStatus,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DataSource, MoreThanOrEqual, Repository } from 'typeorm';
+import { AdEmail, HiforEvent } from './events.entity';
+import { User } from '../user/user.entity';
+import { CreateEventDto, SearchEventDto } from './events.dto';
+import { EmailService } from '../mail/mail.service';
 import { ImageService } from 'src/image/image.service';
 import { ParticipantService } from 'src/participant/participant.service';
 import { Like } from 'src/likes/likes.entity';
 import { Participant } from 'src/participant/participant.entity';
 import { ChatRoomService } from 'src/chat/room/room.service';
 import { ChatRoom } from 'src/chat/room/room.entity';
-  
-  @Injectable()
-  export class EventsService {
-    constructor(
-      private readonly dataSource: DataSource,
-      private emailService: EmailService,
-      private imageService: ImageService,
-      private participantService: ParticipantService,
-      private readonly chatRoomService: ChatRoomService,
 
-      
-      @InjectRepository(Participant)
-      private participantRepository: Repository<Participant>,
-      @InjectRepository(Like)
-      private likeRepository: Repository<Like>, 
-      @InjectRepository(AdEmail)
-      private adEmailRepository: Repository<AdEmail>,
-      @InjectRepository(HiforEvent)
-      private eventRepository: Repository<HiforEvent>,
-      @InjectRepository(User)
-      private userRepository: Repository<User>,
-      // @InjectRepository(ChatRoom)
-      // private chatRoomRepository: Repository<ChatRoom>,   
-    ) {}
-    private readonly logger = new Logger(EventsService.name);
+@Injectable()
+export class EventsService {
+  constructor(
+    private readonly dataSource: DataSource,
+    private emailService: EmailService,
+    private imageService: ImageService,
+    private participantService: ParticipantService,
+    private readonly chatRoomService: ChatRoomService,
 
+    @InjectRepository(Participant)
+    private participantRepository: Repository<Participant>,
+    @InjectRepository(Like)
+    private likeRepository: Repository<Like>,
+    @InjectRepository(AdEmail)
+    private adEmailRepository: Repository<AdEmail>,
+    @InjectRepository(HiforEvent)
+    private eventRepository: Repository<HiforEvent>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    // @InjectRepository(ChatRoom)
+    // private chatRoomRepository: Repository<ChatRoom>,
+  ) {}
+  private readonly logger = new Logger(EventsService.name);
 
   /**
    * 이벤트를 생성하는 함수
@@ -64,7 +62,9 @@ import { ChatRoom } from 'src/chat/room/room.entity';
 
       if (!user) {
         // 사용자 없을 경우 경고 로그 남기고 예외 처리
-        this.logger.warn(`해당 userId=${createEventDto.userId}에 대한 사용자를 찾을 수 없음`);
+        this.logger.warn(
+          `해당 userId=${createEventDto.userId}에 대한 사용자를 찾을 수 없음`,
+        );
         throw new Error('User not found');
       }
 
@@ -82,7 +82,7 @@ import { ChatRoom } from 'src/chat/room/room.entity';
       this.logger.verbose(`이벤트 저장 완료: eventId=${savedEvent.id}`);
 
       //chatroom 생성
-      const chatRoom= await this.chatRoomService.createRoom({
+      const chatRoom = await this.chatRoomService.createRoom({
         name: `${savedEvent.name} 채팅방`,
         eventId: savedEvent.id,
       });
@@ -97,14 +97,26 @@ import { ChatRoom } from 'src/chat/room/room.entity';
       const finalEvent = await queryRunner.manager.save(savedEvent);
 
       //event host를 참가자로 자동 추가
-      await this.participantService.createParticipant(savedEvent.id, user.userId, '', queryRunner.manager);
-      this.logger.verbose(`이벤트 host를 participants에 등록 완료: userId=${user.userId}`);
-
+      await this.participantService.createParticipant(
+        savedEvent.id,
+        user.userId,
+        '',
+        queryRunner.manager,
+      );
+      this.logger.verbose(
+        `이벤트 host를 participants에 등록 완료: userId=${user.userId}`,
+      );
 
       // 이미지가 존재하는 경우 이미지 저장 서비스 호출
       if (images && images.length > 0) {
-        this.logger.debug(`이미지 ${images.length}개 저장 중... eventId=${savedEvent.id}`);
-        await this.imageService.saveImagesForEvent(images, savedEvent, queryRunner.manager);
+        this.logger.debug(
+          `이미지 ${images.length}개 저장 중... eventId=${savedEvent.id}`,
+        );
+        await this.imageService.saveImagesForEvent(
+          images,
+          savedEvent,
+          queryRunner.manager,
+        );
         this.logger.verbose(`이미지 저장 완료: eventId=${savedEvent.id}`);
       }
 
@@ -115,7 +127,13 @@ import { ChatRoom } from 'src/chat/room/room.entity';
       // 최종 이벤트 조회 시 모든 관계 포함
       const finalEventWithRelations = await this.eventRepository.findOne({
         where: { id: finalEvent.id },
-        relations: ['chatRoom', 'chatRoom.users', 'createdBy', 'eventImages', 'reviews'],
+        relations: [
+          'chatRoom',
+          'chatRoom.users',
+          'createdBy',
+          'eventImages',
+          'reviews',
+        ],
       });
 
       if (!finalEventWithRelations) {
@@ -137,7 +155,7 @@ import { ChatRoom } from 'src/chat/room/room.entity';
       this.logger.debug('쿼리러너 해제 완료');
     }
   }
-  
+
   /**
    * 현재 시간 이후의 모든 이벤트를 가져오는 함수
    * - 참가자, 좋아요 수 포함
@@ -150,7 +168,14 @@ import { ChatRoom } from 'src/chat/room/room.entity';
 
       // 이벤트 전체 조회 (참가자, 좋아요, 리뷰, 채팅방 관계 포함)
       const events = await this.eventRepository.find({
-        relations: ['participants', 'likes', 'reviews', 'chatRoom', 'chatRoom.users', 'reviews.user'],
+        relations: [
+          'participants',
+          'likes',
+          'reviews',
+          'chatRoom',
+          'chatRoom.users',
+          'reviews.user',
+        ],
         order: { createdAt: 'DESC' },
       });
 
@@ -171,7 +196,9 @@ import { ChatRoom } from 'src/chat/room/room.entity';
 
           // 승인된 참가자 수 계산
           const approvedParticipantsCount =
-            await this.participantService.countApprovedParticipantsByEvent(event.id);
+            await this.participantService.countApprovedParticipantsByEvent(
+              event.id,
+            );
 
           this.logger.verbose(
             `eventId=${event.id} | 승인된 참가자 수=${approvedParticipantsCount} | 좋아요 수=${event.likes.length}`,
@@ -197,7 +224,9 @@ import { ChatRoom } from 'src/chat/room/room.entity';
         }),
       );
 
-      const filteredEvents = eventsWithApprovedCount.filter((event) => event !== null);
+      const filteredEvents = eventsWithApprovedCount.filter(
+        (event) => event !== null,
+      );
       this.logger.log(`최종 반환 이벤트 수: ${filteredEvents.length}`);
 
       return filteredEvents;
@@ -207,83 +236,81 @@ import { ChatRoom } from 'src/chat/room/room.entity';
     }
   }
 
-  
-    /**
-     * 앞으로 열릴 이벤트(미래 일정)만 가져오는 함수
-     * - 승인된 참가자 수 계산 포함
-     * - 과거 이벤트 제외
-     * - 날짜+시간 기준 오름차순 정렬
-     */
-    async getUpcomingEvents() {
-      try {
-        this.logger.debug('다가오는 이벤트 조회 시작');
-  
-        // 이벤트 전체 조회 (참가자/좋아요 포함)
-        const events = await this.eventRepository.find({
-          relations: ['participants', 'likes'],
-        });
-  
-        this.logger.verbose(`총 ${events.length}개의 이벤트 조회됨`);
-  
-        const now = new Date();
-  
-        // 승인된 참가자 수를 포함한 유효한 이벤트 목록 생성
-        const eventsWithApprovedCount = await Promise.all(
-          events.map(async (event) => {
-            const eventDateTime = new Date(`${event.date}T${event.time}`);
-  
-            // 과거 이벤트는 제외
-            if (eventDateTime < now) {
-              this.logger.debug(`과거 이벤트 제외됨: eventId=${event.id}`);
-              return null;
-            }
-  
-            const approvedParticipantsCount =
-              await this.participantService.countApprovedParticipantsByEvent(event.id);
-  
-            this.logger.verbose(
-              `eventId=${event.id} | 승인된 참가자 수=${approvedParticipantsCount} | 좋아요 수=${event.likes.length}`,
+  /**
+   * 앞으로 열릴 이벤트(미래 일정)만 가져오는 함수
+   * - 승인된 참가자 수 계산 포함
+   * - 과거 이벤트 제외
+   * - 날짜+시간 기준 오름차순 정렬
+   */
+  async getUpcomingEvents() {
+    try {
+      this.logger.debug('다가오는 이벤트 조회 시작');
+
+      // 이벤트 전체 조회 (참가자/좋아요 포함)
+      const events = await this.eventRepository.find({
+        relations: ['participants', 'likes'],
+      });
+
+      this.logger.verbose(`총 ${events.length}개의 이벤트 조회됨`);
+
+      const now = new Date();
+
+      // 승인된 참가자 수를 포함한 유효한 이벤트 목록 생성
+      const eventsWithApprovedCount = await Promise.all(
+        events.map(async (event) => {
+          const eventDateTime = new Date(`${event.date}T${event.time}`);
+
+          // 과거 이벤트는 제외
+          if (eventDateTime < now) {
+            this.logger.debug(`과거 이벤트 제외됨: eventId=${event.id}`);
+            return null;
+          }
+
+          const approvedParticipantsCount =
+            await this.participantService.countApprovedParticipantsByEvent(
+              event.id,
             );
-  
-            return {
-              id: event.id,
-              name: event.name,
-              description: event.description,
-              mainImage: event.mainImage,
-              location: event.location,
-              date: event.date,
-              time: event.time,
-              type: event.type,
-              category: event.category,
-              price: event.price,
-              maxParticipants: event.maxParticipants,
-              minParticipants: event.minParticipants,
-              participants: approvedParticipantsCount,
-              likes: event.likes.length,
-            };
-          }),
-        );
-  
-        // null 제외 후 오름차순 정렬
-        const upcomingEvents = eventsWithApprovedCount
-          .filter((event) => event !== null)
-          .sort((a, b) => {
-            const dateA = new Date(`${a.date}T${a.time}`);
-            const dateB = new Date(`${b.date}T${b.time}`);
-            return dateA.getTime() - dateB.getTime();
-          });
-  
-        this.logger.log(`다가오는 이벤트 수: ${upcomingEvents.length}`);
-        return upcomingEvents;
-      } catch (error) {
-        this.logger.error('다가오는 이벤트 조회 실패', error.stack);
-        throw new Error(`Failed to fetch events: ${error.message}`);
-      }
+
+          this.logger.verbose(
+            `eventId=${event.id} | 승인된 참가자 수=${approvedParticipantsCount} | 좋아요 수=${event.likes.length}`,
+          );
+
+          return {
+            id: event.id,
+            name: event.name,
+            description: event.description,
+            mainImage: event.mainImage,
+            location: event.location,
+            date: event.date,
+            time: event.time,
+            type: event.type,
+            category: event.category,
+            price: event.price,
+            maxParticipants: event.maxParticipants,
+            minParticipants: event.minParticipants,
+            participants: approvedParticipantsCount,
+            likes: event.likes.length,
+          };
+        }),
+      );
+
+      // null 제외 후 오름차순 정렬
+      const upcomingEvents = eventsWithApprovedCount
+        .filter((event) => event !== null)
+        .sort((a, b) => {
+          const dateA = new Date(`${a.date}T${a.time}`);
+          const dateB = new Date(`${b.date}T${b.time}`);
+          return dateA.getTime() - dateB.getTime();
+        });
+
+      this.logger.log(`다가오는 이벤트 수: ${upcomingEvents.length}`);
+      return upcomingEvents;
+    } catch (error) {
+      this.logger.error('다가오는 이벤트 조회 실패', error.stack);
+      throw new Error(`Failed to fetch events: ${error.message}`);
     }
-  
-  
-  
-  
+  }
+
   /**
    * 좋아요 수 기준으로 인기 있는 이벤트를 조회하는 함수
    * - 현재 시각 이후의 이벤트만 대상으로 함
@@ -303,7 +330,10 @@ import { ChatRoom } from 'src/chat/room/room.entity';
         .leftJoin('hifor_event.participants', 'participants')
         .leftJoin('hifor_event.likes', 'likes')
         .addSelect('COUNT(DISTINCT likes.id)', 'likeCount')
-        .where("hifor_event.date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' >= :now", { now: nowString })
+        .where(
+          "hifor_event.date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' >= :now",
+          { now: nowString },
+        )
         .groupBy('hifor_event.id')
         .orderBy('COUNT(DISTINCT likes.id)', 'DESC')
         .getRawMany();
@@ -316,9 +346,13 @@ import { ChatRoom } from 'src/chat/room/room.entity';
           try {
             // 승인된 참가자 수 계산
             const approvedParticipantsCount =
-              await this.participantService.countApprovedParticipantsByEvent(event.hifor_event_id);
+              await this.participantService.countApprovedParticipantsByEvent(
+                event.hifor_event_id,
+              );
 
-            this.logger.debug(`eventId=${event.hifor_event_id} | 참가자=${approvedParticipantsCount} | 좋아요=${event.likeCount}`);
+            this.logger.debug(
+              `eventId=${event.hifor_event_id} | 참가자=${approvedParticipantsCount} | 좋아요=${event.likeCount}`,
+            );
 
             return {
               id: event.hifor_event_id,
@@ -336,7 +370,10 @@ import { ChatRoom } from 'src/chat/room/room.entity';
               likes: parseInt(event.likeCount, 10),
             };
           } catch (innerError) {
-            this.logger.warn(`이벤트 처리 중 오류 발생: eventId=${event.hifor_event_id}`, innerError.stack);
+            this.logger.warn(
+              `이벤트 처리 중 오류 발생: eventId=${event.hifor_event_id}`,
+              innerError.stack,
+            );
             return null; // 오류 발생 시 null 처리
           }
         }),
@@ -350,9 +387,7 @@ import { ChatRoom } from 'src/chat/room/room.entity';
       throw new Error(`Failed to fetch hot events: ${error.message}`);
     }
   }
-  
-  
-  
+
   /**
    * 특정 이벤트 ID로 상세 정보 조회
    * - 생성자, 이미지, 참가자(유저 포함), 좋아요(유저 포함)까지 모든 관계 로딩
@@ -395,7 +430,6 @@ import { ChatRoom } from 'src/chat/room/room.entity';
     this.logger.log(`이벤트 상세 조회 완료: eventId=${eventId}`);
     return event;
   }
-
 
   /**
    * 승인 대기(승인 또는 보류) 상태 참가자 확인을 위한 이벤트 상세 조회
@@ -462,8 +496,6 @@ import { ChatRoom } from 'src/chat/room/room.entity';
     return event;
   }
 
-
-
   /**
    * 정렬 기준(hot/date)에 따라 미래의 이벤트를 정렬하여 조회
    * - hot: 좋아요 수 내림차순
@@ -499,7 +531,9 @@ import { ChatRoom } from 'src/chat/room/room.entity';
     const mappedEvents = await Promise.all(
       events.map(async (event) => {
         const approvedParticipantsCount =
-          await this.participantService.countApprovedParticipantsByEvent(event.id);
+          await this.participantService.countApprovedParticipantsByEvent(
+            event.id,
+          );
 
         this.logger.verbose(
           `eventId=${event.id} | 승인된 참가자 수=${approvedParticipantsCount} | 좋아요=${event.likes.length}`,
@@ -527,8 +561,6 @@ import { ChatRoom } from 'src/chat/room/room.entity';
     return mappedEvents;
   }
 
-
-  
   /**
    * 특정 호스트가 생성한 이벤트 목록 조회
    * - 이벤트의 참가자 수(승인된 인원만), 좋아요 수 포함
@@ -547,16 +579,19 @@ import { ChatRoom } from 'src/chat/room/room.entity';
         order: {
           date: 'DESC',
         },
-        
       });
 
-      this.logger.verbose(`hostId=${hostId} | 조회된 이벤트 수: ${events.length}`);
+      this.logger.verbose(
+        `hostId=${hostId} | 조회된 이벤트 수: ${events.length}`,
+      );
 
       // 이벤트별 승인된 참가자 수 계산 및 데이터 가공
       const processedEvents = await Promise.all(
         events.map(async (event) => {
           const approvedParticipantsCount =
-            await this.participantService.countApprovedParticipantsByEvent(event.id);
+            await this.participantService.countApprovedParticipantsByEvent(
+              event.id,
+            );
 
           this.logger.debug(
             `eventId=${event.id} | 승인된 참가자 수=${approvedParticipantsCount} | 좋아요 수=${event.likes.length}`,
@@ -584,14 +619,19 @@ import { ChatRoom } from 'src/chat/room/room.entity';
         }),
       );
 
-      this.logger.log(`hostId=${hostId} | 최종 반환 이벤트 수: ${processedEvents.length}`);
+      this.logger.log(
+        `hostId=${hostId} | 최종 반환 이벤트 수: ${processedEvents.length}`,
+      );
       return processedEvents;
     } catch (error) {
-      this.logger.error(`호스트 이벤트 조회 실패: hostId=${hostId}`, error.stack);
+      this.logger.error(
+        `호스트 이벤트 조회 실패: hostId=${hostId}`,
+        error.stack,
+      );
       throw new Error(`Failed to fetch events by hostId: ${error.message}`);
     }
   }
-  
+
   /**
    * 특정 사용자가 좋아요한 이벤트 목록을 조회하는 함수
    * - 좋아요 테이블에서 userId 기준으로 필터링
@@ -606,13 +646,20 @@ import { ChatRoom } from 'src/chat/room/room.entity';
         where: {
           user: { userId: likedId },
         },
-        relations: ['event', 'event.createdBy', 'event.likes', 'event.participants'],
+        relations: [
+          'event',
+          'event.createdBy',
+          'event.likes',
+          'event.participants',
+        ],
         order: {
           createdAt: 'DESC',
-        }
+        },
       });
 
-      this.logger.verbose(`userId=${likedId} | 좋아요한 이벤트 수: ${likedEvents.length}`);
+      this.logger.verbose(
+        `userId=${likedId} | 좋아요한 이벤트 수: ${likedEvents.length}`,
+      );
 
       // 유효한 이벤트만 추출
       const events = likedEvents
@@ -656,14 +703,19 @@ import { ChatRoom } from 'src/chat/room/room.entity';
         }),
       );
 
-      this.logger.log(`userId=${likedId} | 최종 반환 이벤트 수: ${mappedEvents.length}`);
+      this.logger.log(
+        `userId=${likedId} | 최종 반환 이벤트 수: ${mappedEvents.length}`,
+      );
       return mappedEvents;
     } catch (error) {
-      this.logger.error(`좋아요한 이벤트 조회 실패: userId=${likedId}`, error.stack);
+      this.logger.error(
+        `좋아요한 이벤트 조회 실패: userId=${likedId}`,
+        error.stack,
+      );
       throw new Error(`Failed to fetch liked events: ${error.message}`);
     }
   }
-  
+
   /**
    * 카테고리별 이벤트 검색
    * - "All"일 경우 전체 이벤트 반환
@@ -684,84 +736,92 @@ import { ChatRoom } from 'src/chat/room/room.entity';
       this.logger.log(`카테고리 "${_category}" 검색 결과: ${events.length}건`);
       return events;
     } catch (error) {
-      this.logger.error(`카테고리 검색 실패: category="${_category}"`, error.stack);
+      this.logger.error(
+        `카테고리 검색 실패: category="${_category}"`,
+        error.stack,
+      );
       throw new Error(
         `Failed to fetch events for category "${_category}": ${error.message}`,
       );
     }
   }
-    /**
+  /**
    * 복합 조건 이벤트 검색 (제목, 날짜, 장소, 유형)
    */
-    async searchEvent(searchEventDto: SearchEventDto) {
-      const { query, date, location, type } = searchEventDto;
-  
-      this.logger.debug(`이벤트 검색 시작 | query="${query}", date="${date}", location="${location}", type="${type}"`);
-  
-      const queryBuilder = this.eventRepository
-        .createQueryBuilder('event')
-        .leftJoinAndSelect('event.createdBy', 'createdBy')
-        .leftJoinAndSelect('event.participants', 'participants')
-        .leftJoinAndSelect('event.likes', 'likes');
-  
-      if (query) {
-        queryBuilder.andWhere('event.name LIKE :query', { query: `%${query}%` });
-      }
-  
-      if (date) {
-        queryBuilder.andWhere('event.date = :date', { date });
-      }
-  
-      if (location) {
-        queryBuilder.andWhere('event.location = :location', { location });
-      }
-  
-      if (type) {
-        queryBuilder.andWhere('event.type = :type', { type });
-      }
-  
-      try {
-        const events = await queryBuilder.getMany();
-        this.logger.verbose(`검색 결과 이벤트 수: ${events.length}`);
-  
-        const mappedEvents = await Promise.all(
-          events.map(async (event) => {
-            const approvedParticipantsCount =
-              await this.participantService.countApprovedParticipantsByEvent(event.id);
-  
-            this.logger.debug(`eventId=${event.id} | 승인된 참가자 수=${approvedParticipantsCount} | 좋아요 수=${event.likes.length}`);
-  
-            return {
-              id: event.id,
-              name: event.name,
-              description: event.description,
-              mainImage: event.mainImage,
-              location: event.location,
-              date: event.date,
-              type: event.type,
-              category: event.category,
-              price: event.price,
-              maxParticipants: event.maxParticipants,
-              minParticipants: event.minParticipants,
-              createdBy: {
-                name: event.createdBy?.username,
-                userId: event.createdBy?.userId,
-              },
-              participants: approvedParticipantsCount,
-              likes: event.likes.length,
-            };
-          }),
-        );
-  
-        this.logger.log(`검색 결과 최종 반환 수: ${mappedEvents.length}`);
-        return mappedEvents;
-      } catch (error) {
-        this.logger.error('이벤트 검색 중 오류 발생', error.stack);
-        throw new Error(`Failed to search events: ${error.message}`);
-      }
+  async searchEvent(searchEventDto: SearchEventDto) {
+    const { query, date, location, type } = searchEventDto;
+
+    this.logger.debug(
+      `이벤트 검색 시작 | query="${query}", date="${date}", location="${location}", type="${type}"`,
+    );
+
+    const queryBuilder = this.eventRepository
+      .createQueryBuilder('event')
+      .leftJoinAndSelect('event.createdBy', 'createdBy')
+      .leftJoinAndSelect('event.participants', 'participants')
+      .leftJoinAndSelect('event.likes', 'likes');
+
+    if (query) {
+      queryBuilder.andWhere('event.name LIKE :query', { query: `%${query}%` });
     }
-  
-  
+
+    if (date) {
+      queryBuilder.andWhere('event.date = :date', { date });
+    }
+
+    if (location) {
+      queryBuilder.andWhere('event.location = :location', { location });
+    }
+
+    if (type) {
+      queryBuilder.andWhere('event.type = :type', { type });
+    }
+
+    try {
+      const events = await queryBuilder.getMany();
+      this.logger.verbose(`검색 결과 이벤트 수: ${events.length}`);
+
+      const mappedEvents = await Promise.all(
+        events.map(async (event) => {
+          const approvedParticipantsCount =
+            await this.participantService.countApprovedParticipantsByEvent(
+              event.id,
+            );
+
+          this.logger.debug(
+            `eventId=${event.id} | 승인된 참가자 수=${approvedParticipantsCount} | 좋아요 수=${event.likes.length}`,
+          );
+
+          return {
+            id: event.id,
+            name: event.name,
+            description: event.description,
+            mainImage: event.mainImage,
+            location: event.location,
+            date: event.date,
+            type: event.type,
+            category: event.category,
+            price: event.price,
+            maxParticipants: event.maxParticipants,
+            minParticipants: event.minParticipants,
+            createdBy: {
+              name: event.createdBy?.username,
+              userId: event.createdBy?.userId,
+            },
+            participants: approvedParticipantsCount,
+            likes: event.likes.length,
+          };
+        }),
+      );
+
+      this.logger.log(`검색 결과 최종 반환 수: ${mappedEvents.length}`);
+      return mappedEvents;
+    } catch (error) {
+      this.logger.error('이벤트 검색 중 오류 발생', error.stack);
+      throw new Error(`Failed to search events: ${error.message}`);
+    }
+  }
+
   /**
    * 사용자의 이벤트 참여 취소 처리
    */
@@ -780,7 +840,9 @@ import { ChatRoom } from 'src/chat/room/room.entity';
     }
 
     // 사용자 조회
-    const user = await this.userRepository.findOne({ where: { userId: _userId } });
+    const user = await this.userRepository.findOne({
+      where: { userId: _userId },
+    });
     if (!user) {
       this.logger.warn(`사용자를 찾을 수 없음: userId=${_userId}`);
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
@@ -800,82 +862,62 @@ import { ChatRoom } from 'src/chat/room/room.entity';
     await this.eventRepository.save(event);
     this.logger.log(`참여 취소 완료: userId=${_userId}, eventId=${eventId}`);
   }
-  
-    /**
-   * 이벤트 삭제 처리 (트랜잭션 기반)
-   * - 참가자, 좋아요 데이터 먼저 삭제
-   * - 이후 이벤트 본문 삭제
-   */
-    async deleteEvent(eventId: number): Promise<boolean> {
-      this.logger.debug(`이벤트 삭제 시도: eventId=${eventId}`);
 
-      // 이벤트와 연관된 채팅방, 참가자, 좋아요 등 관계를 함께 로드하여 가져옵니다.
-      const event = await this.eventRepository.findOne({
+  /**
+   * 이벤트 삭제 처리 (트랜잭션 기반)
+   * - 이벤트와 연관된 모든 데이터를 함께 삭제
+   */
+  async deleteEvent(eventId: number): Promise<boolean> {
+    this.logger.debug(`이벤트 삭제 시도: eventId=${eventId}`);
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      // 모든 관계를 포함하여 이벤트 조회
+      const event = await queryRunner.manager.findOne(HiforEvent, {
         where: { id: eventId },
-        relations: ['chatRoom', 'participants', 'likes'],
+        relations: [
+          'chatRoom',
+          'chatRoom.messages',
+          'participants',
+          'likes',
+          'reviews',
+          'reviews.images',
+          'eventImages',
+        ],
       });
 
       if (!event) {
         throw new NotFoundException(`Event with ID ${eventId} not found`);
       }
 
-      try {
-        // remove()를 사용하면 cascade 옵션이 적용되어 chatRoom도 함께 삭제됩니다.
-        await this.eventRepository.remove(event);
-        this.logger.log(`이벤트 및 연동된 채팅방 삭제 완료: eventId=${eventId}`);
-        return true;
-      } catch (error) {
-        this.logger.error(`이벤트 삭제 중 오류 발생: eventId=${eventId}`, error.stack);
-        throw new HttpException('이벤트 삭제 실패', HttpStatus.INTERNAL_SERVER_ERROR);
-      }
-  
-      // const queryRunner = this.dataSource.createQueryRunner();
-  
-      // try {
-      //   await queryRunner.connect();
-      //   await queryRunner.startTransaction();
-  
-      //   // 참가자 데이터 삭제
-      //   const deleteParticipants = await queryRunner.manager.delete('participant', {
-      //     event: { id: eventId },
-      //   });
-      //   this.logger.verbose(`삭제된 참가자 수: ${deleteParticipants.affected}`);
-  
-      //   // 좋아요 데이터 삭제
-      //   const deleteLikes = await queryRunner.manager.delete('likes', {
-      //     event: { id: eventId },
-      //   });
-      //   this.logger.verbose(`삭제된 좋아요 수: ${deleteLikes.affected}`);
-  
-      //   // 이벤트 삭제
-      //   const deleteEvent = await queryRunner.manager.delete('hifor_event', {
-      //     id: eventId,
-      //   });
-      //   this.logger.verbose(`삭제된 이벤트 수: ${deleteEvent.affected}`);
-  
-      //   await queryRunner.commitTransaction();
-      //   this.logger.log(`이벤트 삭제 완료: eventId=${eventId}`);
-      //   return true;
-      // } catch (error) {
-      //   this.logger.error(`이벤트 삭제 중 오류 발생: eventId=${eventId}`, error.stack);
-      //   await queryRunner.rollbackTransaction();
-      //   return false;
-      // } finally {
-      //   await queryRunner.release();
-      //   this.logger.debug(`쿼리러너 해제: eventId=${eventId}`);
+      // remove()를 사용하면 cascade 옵션이 적용되어 모든 연관 데이터가 함께 삭제됨
+      await queryRunner.manager.remove(event);
+
+      await queryRunner.commitTransaction();
+      this.logger.log(`이벤트 및 연관 데이터 삭제 완료: eventId=${eventId}`);
+      return true;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(
+        `이벤트 삭제 중 오류 발생: eventId=${eventId}`,
+        error.stack,
+      );
+      throw new HttpException(
+        '이벤트 삭제 실패',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    } finally {
+      await queryRunner.release();
     }
-    
-  
-
-
-
-    //메인 페이지 맨 아래 있는 구독 기능
-    async subscribe(email: string) {
-      // email 값만 받아서 엔티티 생성
-      const adEmail = this.adEmailRepository.create({ email });
-      return await this.adEmailRepository.save(adEmail);
-    }
-  
-  
   }
-  
+
+  //메인 페이지 맨 아래 있는 구독 기능
+  async subscribe(email: string) {
+    // email 값만 받아서 엔티티 생성
+    const adEmail = this.adEmailRepository.create({ email });
+    return await this.adEmailRepository.save(adEmail);
+  }
+}
