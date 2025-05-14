@@ -32,7 +32,7 @@ export class HiforEvent extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   question: string;
 
-  @Column({ length: 30, nullable: true })
+  @Column({ length: 255, nullable: true })
   location: string; // 이벤트 장소 (구 단위)
 
   @Column({ length: 255, nullable: true })
