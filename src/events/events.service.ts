@@ -164,74 +164,51 @@ export class EventsService {
    */
   async getAllEvents() {
     try {
-      this.logger.debug('이벤트 전체 조회 시작');
-
-      // 이벤트 전체 조회 (참가자, 좋아요, 리뷰, 채팅방 관계 포함)
-      const events = await this.eventRepository.find({
-        relations: [
-          'participants',
-          'likes',
-          'reviews',
-          'chatRoom',
-          'chatRoom.users',
-          'reviews.user',
-        ],
-        order: { createdAt: 'DESC' },
-      });
-
-      this.logger.verbose(`이벤트 ${events.length}건 조회됨`);
-
       const now = new Date();
+      const nowString = now.toISOString().slice(0, 10);
 
-      // 승인된 참가자 수를 포함한 새로운 이벤트 리스트 생성
-      const eventsWithApprovedCount = await Promise.all(
-        events.map(async (event) => {
-          const eventDateTime = new Date(`${event.date}T${event.time}`);
+      // 필요한 관계만 선택적으로 로드하고, 현재 날짜 이후의 이벤트만 조회
+      const events = await this.eventRepository
+        .createQueryBuilder('event')
+        .leftJoinAndSelect('event.likes', 'likes')
+        .where('event.date >= :now', { now: nowString })
+        .orderBy('event.createdAt', 'DESC')
+        .getMany();
 
-          // 과거 이벤트는 제외
-          if (eventDateTime < now) {
-            this.logger.debug(`과거 이벤트 제외: eventId=${event.id}`);
-            return null;
-          }
+      // 승인된 참가자 수를 한 번의 쿼리로 가져오기
+      const approvedCounts = await this.participantRepository
+        .createQueryBuilder('participant')
+        .select('participant.eventId', 'eventId')
+        .addSelect('COUNT(*)', 'count')
+        .where('participant.status = :status', { status: 'Approved' })
+        .andWhere('participant.eventId IN (:...eventIds)', {
+          eventIds: events.map((e) => e.id),
+        })
+        .groupBy('participant.eventId')
+        .getRawMany();
 
-          // 승인된 참가자 수 계산
-          const approvedParticipantsCount =
-            await this.participantService.countApprovedParticipantsByEvent(
-              event.id,
-            );
+      // 이벤트 ID를 키로 하는 맵 생성
+      const approvedCountMap = approvedCounts.reduce((acc, curr) => {
+        acc[curr.eventId] = parseInt(curr.count);
+        return acc;
+      }, {});
 
-          this.logger.verbose(
-            `eventId=${event.id} | 승인된 참가자 수=${approvedParticipantsCount} | 좋아요 수=${event.likes.length}`,
-          );
-
-          return {
-            id: event.id,
-            name: event.name,
-            description: event.description,
-            mainImage: event.mainImage,
-            location: event.location,
-            date: event.date,
-            type: event.type,
-            category: event.category,
-            price: event.price,
-            maxParticipants: event.maxParticipants,
-            minParticipants: event.minParticipants,
-            participants: approvedParticipantsCount,
-            likes: event.likes.length,
-            reviews: event.reviews || [],
-            chatRoom: event.chatRoom || null,
-          };
-        }),
-      );
-
-      const filteredEvents = eventsWithApprovedCount.filter(
-        (event) => event !== null,
-      );
-      this.logger.log(`최종 반환 이벤트 수: ${filteredEvents.length}`);
-
-      return filteredEvents;
+      return events.map((event) => ({
+        id: event.id,
+        name: event.name,
+        description: event.description,
+        mainImage: event.mainImage,
+        location: event.location,
+        date: event.date,
+        type: event.type,
+        category: event.category,
+        price: event.price,
+        maxParticipants: event.maxParticipants,
+        minParticipants: event.minParticipants,
+        participants: approvedCountMap[event.id] || 0,
+        likes: event.likes.length,
+      }));
     } catch (error) {
-      this.logger.error('이벤트 전체 조회 중 오류 발생', error.stack);
       throw new Error(`Failed to fetch events: ${error.message}`);
     }
   }
