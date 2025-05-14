@@ -50,7 +50,6 @@ export class EventsService {
   async createEvent(createEventDto: CreateEventDto): Promise<HiforEvent> {
     const queryRunner = this.dataSource.createQueryRunner(); //db연결 객체(repo대신)
     await queryRunner.startTransaction();
-
     try {
       // 트랜잭션 시작 로그 (디버깅용)
       this.logger.debug('createEvent 트랜잭션 시작');

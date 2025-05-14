@@ -75,7 +75,14 @@ export class ParticipantService {
     }
 
     //event가 Register면 pend, 아니면 approve
-    const status = event.type === 'Register' ? 'Pending' : 'Approved';
+    // 이벤트 생성자가 참가자일 경우 무조건 Approved
+    let status: 'Pending' | 'Approved';
+
+    if (event.createdBy.userId === _userId) {
+      status = 'Approved';
+    } else {
+      status = event.type === 'Register' ? 'Pending' : 'Approved';
+    }
 
     //participant entity 생성
     const participant = this.participantRepository.create({
